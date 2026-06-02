@@ -325,12 +325,15 @@ class StateManager:
 
     def _can_transition(self, task: TaskState, target_status: str) -> bool:
         """Status checks whether the transition is valid."""
+        if task.status == target_status:
+            return False
+            
         valid_targets = _VALID_TRANSITIONS.get(task.status, set())
         if target_status not in valid_targets:
             logger.warning(
-                f"Invalid transition: {task.id}"
-                f"'{task.status}' → '{target_status}' "
-                f"(izin verilen: {valid_targets})"
+                f"Invalid transition: {task.id} "
+                f"from '{task.status}' to '{target_status}' "
+                f"(allowed: {valid_targets})"
             )
             return False
         return True

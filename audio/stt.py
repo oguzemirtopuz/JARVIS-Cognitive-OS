@@ -36,7 +36,7 @@ except ImportError:
 # ── Gemini SDK (AI Polisher alternatifi) ──
 _HAS_GEMINI = False
 try:
-    import google.generativeai as genai
+    from google import genai
     _HAS_GEMINI = True
 except ImportError:
     pass
@@ -93,11 +93,12 @@ def _polish_with_groq(raw_text: str, api_key: str) -> Optional[str]:
 def _polish_with_gemini(raw_text: str, api_key: str) -> Optional[str]:
     """Polishes raw transcription text using Gemini (Groq backup)."""
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.0-flash")
-        response = model.generate_content(
-            f"{_POLISHER_SYSTEM_PROMPT}\n\nMetin:\n{raw_text}",
-            generation_config=genai.types.GenerationConfig(
+        from google import genai
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=f"{_POLISHER_SYSTEM_PROMPT}\n\nMetin:\n{raw_text}",
+            config=genai.types.GenerateContentConfig(
                 temperature=0.1,
                 max_output_tokens=1024,
             )

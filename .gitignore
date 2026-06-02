@@ -43,3 +43,4 @@ validation_output/
 validation_reports/
 validation/
 errors/
+settings.json

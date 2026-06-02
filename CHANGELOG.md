@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v16.5.0] - 2026-06-02
+### Added
+- **[UI/System] Settings Module & Auto-Start:** Integrated a dedicated SETTINGS tab into the HUD. Features include dynamic Screen Analysis Interval selection, one-click Windows Auto-Start registration (`winreg`), and a synchronized Language Switcher.
+- **[System] Dynamic Screen Analysis:** Upgraded the `ProactiveWatcher` to accept user-defined intervals directly from the new Settings Module. Automatically pauses operations when disabled, saving API tokens.
+- **[Commands] Slash Shortcuts:** Added direct slash commands (`/analysis 5`, `/analiz kapat`, etc.) to instantly control the watcher interval from the text interface.
+
+### Fixed
+- **[Core] Google GenAI Migration:** Upgraded the legacy `google.generativeai` imports to the new `google.genai` SDK and adapted prompting logic for the `gemini-2.5-flash` model inside `audio/stt.py`.
+- **[UI] Scrollbar Aesthetics:** Replaced legacy TKinter scrollbars with elegant `ctk.CTkScrollbar` components matching the J.A.R.V.I.S. dark blue theme.
+- **[Stability] State Transition Logic:** Patched an invalid state transition warning in `core/state_manager.py` that occurred when a task tried transitioning to its already active state.
+
+---
+
 ## [v16.4.0] - 2026-05-30
 ### Added
 - **[System] Bilingual Input Core:** J.A.R.V.I.S. now seamlessly understands and processes both English and Turkish voice commands regardless of the active UI mode. TTS responses are strictly enforced in English to prevent audio distortion.

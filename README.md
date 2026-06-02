@@ -66,15 +66,15 @@ J.A.R.V.I.S. possesses true episodic memory:
 
 ---
 
-## ✨ Latest Enhancements (v16.4.0)
+## ✨ Latest Enhancements (v16.5.0)
 
 > [!IMPORTANT]
-> **Bilingual Cognitive Processing & Autonomous Self-Healing**
-> * **[System] Bilingual Input Core:** J.A.R.V.I.S. now seamlessly understands and processes both English and Turkish voice commands regardless of the active UI mode. TTS responses are strictly enforced in English to prevent audio distortion, maintaining a premium user experience.
-> * **[Core/UI] Deep Code Review Fixes:** Addressed 12 deep structural bugs identified via autonomous code review, including resolving a critical `asyncio.Lock` race condition in the LLM Brain, fixing event loop blocking during locale setup, restoring invisible UI scrollbars, and patching language-switch memory counters.
-> * **[Stability] Dead Code Elimination:** Cleaned up unused Vision objects from the Proactive Watcher, fixed duplicate silence variants, and enhanced the shutdown regex to catch English-mode voice termination commands perfectly.
+> **Complete Control: Settings HUD, Auto-Start & GenAI Migration**
+> * **[System/UI] Unified Settings Hub:** Deployed a highly requested SETTINGS tab directly into the UI. Users can now natively toggle Windows Auto-Start (`winreg` integrated), dynamically control the Proactive Watcher's observation interval, and switch global language profiles in real-time.
+> * **[Commands] Dynamic Slash Commands:** The OS now natively intercepts `/analysis off` or `/analiz 5` slash commands through the text terminal, immediately updating backend behavior and UI state.
+> * **[Core] Google GenAI SDK Upgrade:** Entirely deprecated `google.generativeai` in favor of the latest `google.genai` client, upgrading core models to `gemini-2.5-flash` for whisper-fast audio and visual reasoning.
 
-*(For a full list of past version histories including v16.3.0, refer to the Changelog section in the codebase.)*
+*(For a full list of past version histories including v16.4.0, refer to the Changelog section in the codebase.)*
 
 ---
 

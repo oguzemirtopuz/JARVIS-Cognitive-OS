@@ -24,6 +24,7 @@ import win32gui
 import win32con
 from datetime import datetime
 import logging
+from core.user_settings import UserSettings
 
 logger = logging.getLogger("JARVIS.GUI")
 
@@ -122,6 +123,19 @@ LANG = {
         "working":            "WORKING",
         "awaiting_cmd":       "AWAITING CMD",
         "ready":              "READY",
+        "settings_tab":       "SETTINGS",
+        "scr_interval":       "Screen Analysis Interval",
+        "interval_off":       "Off",
+        "interval_5":         "5 min",
+        "interval_10":        "10 min",
+        "interval_15":        "15 min",
+        "interval_30":        "30 min",
+        "token_warning":      "Warning: Frequent analysis uses high API tokens!",
+        "cmd_hint":           "Tip: Quick switch via '/analysis 5' or '/analysis off'",
+        "auto_start_pc":      "Start with Windows",
+        "language_select":    "Language",
+        "vision_analysis":    "👁 VISION & ANALYSIS",
+        "sys_prefs":          "⚙ SYSTEM & PREFERENCES",
     },
     "tr": {
         "title":              "J.A.R.V.I.S. — Sistem Kontrol Merkezi",
@@ -159,11 +173,11 @@ LANG = {
         "autostart_question": "Efendim, Windows her açıldığında yanınızda olmamı ister misiniz?",
         "autostart_yes":      "✓  Evet, Windows ile başlat",
         "autostart_no":       "✗ Hayır, gerek yok",
-        "you_written":        "Sen (Yazılı):",
-        "starting":           "BAŞLANIYOR",
+        "you_written":        "Siz (Yazı):",
+        "starting":           "BAŞLATILIYOR",
         "lang_btn":           "EN",
         "lang_note":          "[GUI] Dil: Türkçe",
-        "no_analysis":        "Henüz analiz yapılmadı.",
+        "no_analysis":        "Henüz bir analiz yapılmadı.",
         "mem_dist":           "Bellek Dağılımı",
         "avg_importance":     "Ort. Önem",
         "type_episodic":      "Epizodik",
@@ -177,6 +191,19 @@ LANG = {
         "working":            "ÇALIŞIYOR",
         "awaiting_cmd":       "KOMUT BEKLENİYOR",
         "ready":              "HAZIR",
+        "settings_tab":       "AYARLAR",
+        "scr_interval":       "Ekran Analizi Süresi",
+        "interval_off":       "Kapalı",
+        "interval_5":         "5 dk",
+        "interval_10":        "10 dk",
+        "interval_15":        "15 dk",
+        "interval_30":        "30 dk",
+        "token_warning":      "Uyarı: Sık analiz yüksek API token tüketimine yol açabilir!",
+        "cmd_hint":           "İpucu: Komutla '/analiz 5' veya '/analiz kapat' yazabilirsiniz.",
+        "auto_start_pc":      "Windows ile Başlat",
+        "language_select":    "Dil Seçimi",
+        "vision_analysis":    "👁 GÖRÜŞ & ANALİZ",
+        "sys_prefs":          "⚙ SİSTEM & TERCİHLER",
     }
 }
 
@@ -388,7 +415,9 @@ class JarvisInterface:
         self.engine      = None
 
         # [LANG] Language: "en" or "tr"
-        self._lang = "en"
+        # Load from user settings
+        self._user_settings = UserSettings()
+        self._lang = self._user_settings.get("language", "en")
 
         # [10/10] Vision final summary
         self._last_vision_summary = "No analysis has been made yet."
@@ -413,6 +442,7 @@ class JarvisInterface:
     def _toggle_language(self):
         """Switches between EN and TR UI language. TTS output is always English."""
         self._lang = "tr" if self._lang == "en" else "en"
+        self._user_settings.set("language", self._lang)
         self._apply_language()
         self._append_log(self._t("lang_note"), "system")
 
@@ -446,8 +476,19 @@ class JarvisInterface:
             self._update_status(self._status)
 
         # Tabs
-        # Note: CTkTabview doesn't support renaming tabs after creation easily,
-        # so we only update button-level labels that we store references to.
+        # Update tab names by directly modifying the underlying segmented button text
+        try:
+            btn_dict = self.tabview._segmented_button._buttons_dict
+            if "LOGS" in btn_dict:
+                btn_dict["LOGS"].configure(text=strings["logs_tab"])
+            if "MISSION CONTROL" in btn_dict:
+                btn_dict["MISSION CONTROL"].configure(text=strings["mission_tab"])
+            if "MEMORY" in btn_dict:
+                btn_dict["MEMORY"].configure(text=strings["memory_tab"])
+            if "SETTINGS" in btn_dict:
+                btn_dict["SETTINGS"].configure(text=strings["settings_tab"])
+        except Exception:
+            pass
 
         # Log panel
         self.log_header_lbl.configure(text=strings["system_logs"])
@@ -484,6 +525,34 @@ class JarvisInterface:
         # Update the vision status if it is in a default waiting state
         if self.vision_lbl.cget("text") == LANG["en"]["waiting"] or self.vision_lbl.cget("text") == LANG["tr"]["waiting"]:
             self.vision_lbl.configure(text=strings["waiting"])
+            
+        # Update settings panel strings
+        if hasattr(self, 'set_scr_interval_lbl'):
+            self.set_scr_interval_lbl.configure(text=strings["scr_interval"])
+            
+            # Sub-headers
+            self.set_vision_header.configure(text=strings.get("vision_analysis", "👁 VISION & ANALYSIS"))
+            self.set_sys_header.configure(text=strings.get("sys_prefs", "⚙ SYSTEM & PREFERENCES"))
+            
+            # Update combobox values while keeping current selection mapped
+            cv = self.set_scr_interval_combo.get()
+            current_map = {"Off": 0, "Kapalı": 0, "5 min": 300, "5 dk": 300, "10 min": 600, "10 dk": 600, "15 min": 900, "15 dk": 900, "30 min": 1800, "30 dk": 1800}
+            current_val = current_map.get(cv, 900)
+            
+            vals = [strings["interval_off"], strings["interval_5"], strings["interval_10"], strings["interval_15"], strings["interval_30"]]
+            self.set_scr_interval_combo.configure(values=vals)
+            
+            # Re-select the correct string based on the underlying value
+            val_to_str = {0: strings["interval_off"], 300: strings["interval_5"], 600: strings["interval_10"], 900: strings["interval_15"], 1800: strings["interval_30"]}
+            self.set_scr_interval_combo.set(val_to_str.get(current_val, strings["interval_15"]))
+            
+            self.set_token_warning_lbl.configure(text=strings["token_warning"])
+            self.set_cmd_hint_lbl.configure(text=strings["cmd_hint"])
+            self.set_auto_start_switch.configure(text=strings["auto_start_pc"])
+            self.set_lang_lbl.configure(text=strings["language_select"])
+            
+            # Sync language combobox selection with current language
+            self.set_lang_combo.set("Türkçe" if L == "tr" else "English")
             
         # Re-apply the current status translation
         self._update_status(self._status)
@@ -556,10 +625,12 @@ class JarvisInterface:
         tab_log     = self.tabview.add("LOGS")
         tab_mission = self.tabview.add("MISSION CONTROL")
         tab_memory  = self.tabview.add("MEMORY")
+        tab_settings = self.tabview.add("SETTINGS")
 
         self._build_log_panel(tab_log)
         self._build_mission_panel(tab_mission)
         self._build_memory_panel(tab_memory)
+        self._build_settings_panel(tab_settings)
 
         # Bottom Entry
         tk.Frame(self.root, bg=ACCENT_DIM, height=1).pack(fill="x")
@@ -1012,6 +1083,115 @@ class JarvisInterface:
                      wraplength=520, justify="left", anchor="w").pack(anchor="w", pady=(2, 0))
 
     # ─────────────────────────────────────────────────────────────────────────
+    # SETTINGS TAB
+    # ─────────────────────────────────────────────────────────────────────────
+    def _build_settings_panel(self, parent):
+        """Builds the Settings control panel."""
+        container = tk.Frame(parent, bg=BG_PANEL)
+        container.pack(fill="both", expand=True, padx=12, pady=12)
+        
+        # Screen Analysis Section
+        analysis_frame = tk.Frame(container, bg=BG_CARD, highlightbackground=ACCENT_DIM, highlightthickness=1)
+        analysis_frame.pack(fill="x", pady=(0, 10))
+        
+        self.set_vision_header = tk.Label(analysis_frame, text=self._t("vision_analysis"), font=("Consolas", 10, "bold"), fg=ACCENT_BLUE, bg=BG_CARD)
+        self.set_vision_header.pack(anchor="w", padx=15, pady=(12, 5))
+        tk.Frame(analysis_frame, bg=ACCENT_DIM, height=1).pack(fill="x", padx=15, pady=2)
+        
+        row1 = tk.Frame(analysis_frame, bg=BG_CARD)
+        row1.pack(fill="x", padx=15, pady=(8, 4))
+        self.set_scr_interval_lbl = tk.Label(row1, text=self._t("scr_interval"), font=("Consolas", 10), fg=TEXT_MAIN, bg=BG_CARD)
+        self.set_scr_interval_lbl.pack(side="left")
+        
+        self.set_scr_interval_combo = ctk.CTkComboBox(
+            row1, 
+            values=[self._t("interval_off"), self._t("interval_5"), self._t("interval_10"), self._t("interval_15"), self._t("interval_30")],
+            width=120, fg_color=BG_PANEL, border_color=ACCENT_DIM, button_color=ACCENT_DIM, button_hover_color=ACCENT_BLUE,
+            dropdown_fg_color=BG_PANEL, text_color=TEXT_MAIN,
+            state="readonly",
+            command=self._on_interval_change
+        )
+        self.set_scr_interval_combo.pack(side="right")
+        
+        # Determine initial selection based on settings
+        curr_val = self._user_settings.get("screen_analysis_interval", 900)
+        val_to_str = {0: self._t("interval_off"), 300: self._t("interval_5"), 600: self._t("interval_10"), 900: self._t("interval_15"), 1800: self._t("interval_30")}
+        self.set_scr_interval_combo.set(val_to_str.get(curr_val, self._t("interval_15")))
+        
+        self.set_token_warning_lbl = tk.Label(analysis_frame, text=self._t("token_warning"), font=("Consolas", 8), fg="#FF6B35", bg=BG_CARD)
+        if curr_val == 300:
+            self.set_token_warning_lbl.pack(anchor="e", padx=15, pady=(0, 5))
+            
+        self.set_cmd_hint_lbl = tk.Label(analysis_frame, text=self._t("cmd_hint"), font=("Consolas", 8, "italic"), fg=TEXT_DIM, bg=BG_CARD)
+        self.set_cmd_hint_lbl.pack(anchor="w", padx=15, pady=(0, 12))
+        
+        # System Settings Section
+        sys_frame = tk.Frame(container, bg=BG_CARD, highlightbackground=ACCENT_DIM, highlightthickness=1)
+        sys_frame.pack(fill="x", pady=10)
+        
+        self.set_sys_header = tk.Label(sys_frame, text=self._t("sys_prefs"), font=("Consolas", 10, "bold"), fg=ACCENT_BLUE, bg=BG_CARD)
+        self.set_sys_header.pack(anchor="w", padx=15, pady=(12, 5))
+        tk.Frame(sys_frame, bg=ACCENT_DIM, height=1).pack(fill="x", padx=15, pady=2)
+        
+        row2 = tk.Frame(sys_frame, bg=BG_CARD)
+        row2.pack(fill="x", padx=15, pady=(10, 5))
+        
+        self.set_auto_start_switch = ctk.CTkSwitch(
+            row2, text=self._t("auto_start_pc"), text_color=TEXT_MAIN, font=("Consolas", 10),
+            fg_color=ACCENT_DIM, progress_color=GREEN_OK, command=self._on_auto_start_change
+        )
+        self.set_auto_start_switch.pack(side="left")
+        if self._user_settings.get("auto_start", False):
+            self.set_auto_start_switch.select()
+            
+        row3 = tk.Frame(sys_frame, bg=BG_CARD)
+        row3.pack(fill="x", padx=15, pady=(10, 15))
+        self.set_lang_lbl = tk.Label(row3, text=self._t("language_select"), font=("Consolas", 10), fg=TEXT_MAIN, bg=BG_CARD)
+        self.set_lang_lbl.pack(side="left")
+        
+        self.set_lang_combo = ctk.CTkComboBox(
+            row3, values=["English", "Türkçe"],
+            width=120, fg_color=BG_PANEL, border_color=ACCENT_DIM, button_color=ACCENT_DIM, button_hover_color=ACCENT_BLUE,
+            dropdown_fg_color=BG_PANEL, text_color=TEXT_MAIN,
+            state="readonly",
+            command=self._on_lang_combo_change
+        )
+        self.set_lang_combo.pack(side="right")
+        self.set_lang_combo.set("Türkçe" if self._lang == "tr" else "English")
+
+    def _on_interval_change(self, choice):
+        str_to_val = {
+            self._t("interval_off"): 0, 
+            self._t("interval_5"): 300, 
+            self._t("interval_10"): 600, 
+            self._t("interval_15"): 900, 
+            self._t("interval_30"): 1800
+        }
+        val = str_to_val.get(choice, 900)
+        self._user_settings.set("screen_analysis_interval", val)
+        
+        if val == 300:
+            self.set_token_warning_lbl.pack(anchor="e", padx=15, pady=(0, 5), before=self.set_cmd_hint_lbl)
+        else:
+            self.set_token_warning_lbl.pack_forget()
+            
+        # Update engine watcher if available
+        if hasattr(self, 'engine') and self.engine and hasattr(self.engine, 'watcher'):
+            self.engine.watcher.MIN_INTERVAL_SECONDS = val
+            self.engine.watcher.MAX_INTERVAL_SECONDS = val * 2 if val > 0 else 0
+            self.engine.watcher._current_interval = val
+
+    def _on_auto_start_change(self):
+        enabled = self.set_auto_start_switch.get() == 1
+        self._user_settings.update_auto_start(enabled)
+
+    def _on_lang_combo_change(self, choice):
+        target_lang = "tr" if choice == "Türkçe" else "en"
+        if target_lang != self._lang:
+            self._user_settings.set("language", target_lang)
+            self._toggle_language()
+            
+    # ─────────────────────────────────────────────────────────────────────────
     # TOAST NOTIFICATION — [10/10] “I Learned ✓”
     # ─────────────────────────────────────────────────────────────────────────
     def _poll_toast(self):
@@ -1120,7 +1300,7 @@ class JarvisInterface:
                                padx=10, pady=6)
         self.log_box.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-        sb = tk.Scrollbar(parent, command=self.log_box.yview)
+        sb = ctk.CTkScrollbar(parent, command=self.log_box.yview, fg_color=BG_PANEL, button_color=ACCENT_DIM, button_hover_color=ACCENT_BLUE)
         sb.pack(side="right", fill="y", padx=(0, 10), pady=(0, 10))
         self.log_box.configure(yscrollcommand=sb.set)
 
@@ -1308,6 +1488,30 @@ class JarvisInterface:
             return "break"
             
         self.text_entry.delete("1.0", "end")
+        
+        # Intercept settings slash commands
+        cmd_lower = text.lower()
+        if cmd_lower in ["/analiz kapat", "/analysis off"]:
+            self.set_scr_interval_combo.set(self._t("interval_off"))
+            self._on_interval_change(self._t("interval_off"))
+            self._append_log("[SETTINGS] Screen Analysis has been disabled.", "system")
+            self.root.after(10, lambda: self._on_entry_focus_out(None))
+            return "break"
+        elif cmd_lower.startswith("/analiz ") or cmd_lower.startswith("/analysis "):
+            parts = cmd_lower.split(" ")
+            if len(parts) == 2 and parts[1].isdigit():
+                mins = int(parts[1])
+                valid_mins = [5, 10, 15, 30]
+                if mins in valid_mins:
+                    choice_str = self._t(f"interval_{mins}")
+                    self.set_scr_interval_combo.set(choice_str)
+                    self._on_interval_change(choice_str)
+                    self._append_log(f"[SETTINGS] Screen Analysis interval set to {mins} minutes.", "system")
+                else:
+                    self._append_log(f"[SETTINGS] Invalid interval. Valid options: {valid_mins}", "error")
+                self.root.after(10, lambda: self._on_entry_focus_out(None))
+                return "break"
+        
         self._append_log(f"{self._t('you_written')} {text}", "user")
         
         self.root.after(0, lambda: self.last_cmd.configure(

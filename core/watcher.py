@@ -2,6 +2,7 @@ import asyncio
 import logging
 import uuid
 from datetime import datetime
+from core.user_settings import UserSettings
 
 logger = logging.getLogger("JARVIS.Watcher")
 
@@ -67,7 +68,7 @@ class ProactiveWatcher:
         self._consecutive_silence = 0      # Consecutive silence timer
         self._total_observations = 0       # Total number of observations
         self._total_actions = 0            # Total number of proactive actions
-        # NOTE: JarvisVision removed — watcher uses active-window detection, not screenshots
+        self._user_settings = UserSettings()
 
     async def run(self):
         self._running = True
@@ -78,6 +79,19 @@ class ProactiveWatcher:
 
         while self._running:
             try:
+                configured_interval = self._user_settings.get("screen_analysis_interval", 900)
+                if configured_interval <= 0:
+                    # Analysis is OFF
+                    await asyncio.sleep(5)
+                    continue
+                    
+                # Update limits dynamically based on user setting
+                self.MIN_INTERVAL_SECONDS = configured_interval
+                self.MAX_INTERVAL_SECONDS = configured_interval * 2
+                
+                # Make sure current interval is within limits
+                self._current_interval = max(self.MIN_INTERVAL_SECONDS, min(self.MAX_INTERVAL_SECONDS, self._current_interval))
+
                 # Use dynamic range
                 await asyncio.sleep(self._current_interval)
                 if not self._running:
