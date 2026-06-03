@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v16.5.1] - 2026-06-03
+### Added
+- **[System/UI] Dual-Engine Logging & TTS:** Implemented a new intelligent translation layer inside `io_bridge.py`. When the UI language is set to Turkish, J.A.R.V.I.S. continues to use English for its Text-To-Speech (TTS) engine to avoid accent distortions, but dynamically translates its spoken text into Turkish for the UI LOG panel using either a rapid static dictionary or an asynchronous LLM call.
+
+---
+
 ## [v16.5.0] - 2026-06-02
 ### Added
 - **[UI/System] Settings Module & Auto-Start:** Integrated a dedicated SETTINGS tab into the HUD. Features include dynamic Screen Analysis Interval selection, one-click Windows Auto-Start registration (`winreg`), and a synchronized Language Switcher.

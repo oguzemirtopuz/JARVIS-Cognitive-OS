@@ -163,13 +163,65 @@ class IOBridge:
     # I/O
     # ─────────────────────────────────────────────────────────────────────────
 
+    async def _translate_to_tr(self, text: str) -> str:
+        TR_MAP = {
+            "Understood, Sir.": "Anlaşıldı, Efendim.",
+            "Sir, systems are ready. Come on, I'm listening to you.": "Sistemler hazır Efendim. Sizi dinliyorum.",
+            "Sir, come again. I am listening.": "Efendim, tekrar dinliyorum.",
+            "Sir, an error has occurred.": "Efendim, bir hata oluştu.",
+            "Systems are shutting down. Have a nice day Sir.": "Sistemler kapatılıyor. İyi günler Efendim.",
+            "Sir, something went wrong.": "Efendim, bir şeyler ters gitti.",
+            "Sir, my brain module has gone into rest.": "Efendim, beyin modülüm dinlenmeye geçti.",
+            "WhatsApp is opening, Sir.": "WhatsApp açılıyor, Efendim.",
+            "Sir, you have reminders from the previous opening.": "Efendim, önceki oturumdan kalan hatırlatıcılarınız var.",
+            "Sir, I didn't know how to meet this request.": "Efendim, bu isteği nasıl yerine getireceğimi bilemedim."
+        }
+        clean_text = text.strip()
+        if clean_text in TR_MAP:
+            return TR_MAP[clean_text]
+        
+        # Check if text contains a known phrase prefix
+        if clean_text.startswith("Sir, operation ") and "failed" in clean_text:
+            return "Efendim, işlem başarısız oldu. Farklı bir yol deneyeyim mi?"
+            
+        import os
+        from groq import AsyncGroq
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            return text
+            
+        try:
+            client = AsyncGroq(api_key=api_key)
+            response = await client.chat.completions.create(
+                model="llama3-8b-8192",
+                messages=[
+                    {"role": "system", "content": "You are a professional translator. Translate the given English text to Turkish. Maintain the polite tone (like Efendim). Return ONLY the translated Turkish text, nothing else."},
+                    {"role": "user", "content": clean_text}
+                ],
+                max_tokens=256,
+                temperature=0.1
+            )
+            tr_text = response.choices[0].message.content.strip()
+            return tr_text if tr_text else text
+        except Exception as e:
+            logger.warning(f"Translation error: {e}")
+            return text
+
     async def speak(self, text: str) -> None:
         try:
-            print(f"[J.A.R.V.I.S.]: {text}")
+            from core.user_settings import UserSettings
+            lang = UserSettings().get("language", "en")
+            
+            display_text = text
+            if lang == "tr":
+                display_text = await self._translate_to_tr(text)
+                
+            print(f"[J.A.R.V.I.S.]: {display_text}")
         except UnicodeEncodeError:
             # Fallback to ascii/safe characters if terminal doesn't support UTF-8
-            safe_text = text.encode('ascii', 'replace').decode('ascii')
+            safe_text = display_text.encode('ascii', 'replace').decode('ascii')
             print(f"[J.A.R.V.I.S.]: {safe_text}")
+            
         if self._tts_func:
             try:
                 await asyncio.get_running_loop().run_in_executor(None, self._tts_func, text)
