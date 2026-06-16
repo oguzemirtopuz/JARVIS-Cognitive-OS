@@ -1,135 +1,256 @@
-# 🧠 J.A.R.V.I.S. Cognitive OS — The Next-Generation Autonomous Agent Architecture 🚀
+<div align="center">
 
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org)
-[![Asyncio Core](https://img.shields.io/badge/Asynchronous-Core-FF6F00?style=for-the-badge&logo=cpu&logoColor=white)](https://docs.python.org/3/library/asyncio.html)
-[![Playwright](https://img.shields.io/badge/Playwright-Browser_Tool-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)](https://playwright.dev)
-[![HuggingFace](https://img.shields.io/badge/HuggingFace-NLP-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co)
-[![VectorDB Memory](https://img.shields.io/badge/Episodic_Memory-VectorDB-0052FF?style=for-the-badge&logo=databricks&logoColor=white)](https://www.trychroma.com/)
+[![Asyncio Core](https://img.shields.io/badge/Architecture-Async_Orchestration-FF6F00?style=for-the-badge&logo=cpu&logoColor=white)](https://docs.python.org/3/library/asyncio.html)
+[![Playwright](https://img.shields.io/badge/Playwright-Browser_Automation-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)](https://playwright.dev)
+[![VectorDB Memory](https://img.shields.io/badge/Memory-ChromaDB_VectorDB-0052FF?style=for-the-badge&logo=databricks&logoColor=white)](https://www.trychroma.com/)
+[![Google Gemini](https://img.shields.io/badge/AI-Gemini_2.5_Flash-8E75C2?style=for-the-badge&logo=google-gemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-> **The Era of Simple Chatbots is Over. Welcome to True Autonomy.**
+<h1>🧠 J.A.R.V.I.S. Cognitive OS</h1>
+<h3>The AI that plans, executes, fails, and heals itself — without asking you for help.</h3>
 
-**J.A.R.V.I.S. (Just A Rather Very Intelligent System)** is an elite, state-of-the-art **Cognitive AI Operating System** designed to bridge the gap between static LLM chatbots and fully autonomous, self-healing digital entities. Built on a non-blocking asynchronous architecture, J.A.R.V.I.S. autonomously navigates web browsers, manipulates desktop environments, synthesizes new skills on the fly, and reflects on its own failures to learn and adapt.
+<p><em>Not a chatbot. Not a wrapper. A self-directing cognitive agent architecture.</em></p>
 
----
-
-## 🚀 Live Demo
-*(Insert your live demo link, GIF, or YouTube video link here to showcase the Cognitive AI OS in action!)*
-
-[▶️ Watch J.A.R.V.I.S. in Action](#) *(Demo link coming soon — video walkthrough in progress)*
+</div>
 
 ---
 
-## 🛑 The Core Problem: Why Chatbots Fail
+## 🎯 What Problem Does This Solve?
 
-Traditional chatbots act as passive responders—they wait for prompts and output raw text. They lack context, persistence, and agency. When they encounter an error (like a website structure changing), they crash and require human intervention. 
+Every AI assistant today has a fundamental flaw: **it stops the moment something goes wrong.**
 
-**J.A.R.V.I.S. Solves This:** By shifting from a conversational model to an **LLM Orchestration Framework**, J.A.R.V.I.S. acts independently. It breaks down high-level objectives into actionable sub-tasks, delegates them to stateless tools, and continuously monitors execution state.
+API timeout? It crashes. Website structure changes? It freezes. Unexpected error? It asks you what to do.
+
+J.A.R.V.I.S. was built to solve exactly this. It is a **Cognitive AI Operating System** — an autonomous agent that:
+- Breaks down your high-level goals into executable plans
+- Runs those plans using sandboxed browser, desktop, and file tools
+- **Detects its own failures and rewrites its plan to work around them**
+- Remembers every past success and failure in a local vector database
+- Learns from patterns so it gets better at handling similar problems over time
+
+**The era of "the AI crashed, now what?" is over.**
 
 ---
 
-## 🏛️ Elite Architecture & Subsystems
+## 👥 Who This Is For
 
-```mermaid
-graph TD
-    A[Input: Voice STT / GUI / CLI] --> B[ExecutionEngine: Main Async Orchestrator]
-    B --> C[LLM Orchestration: Cognitive Planner JSON]
-    B --> D[Tool Registry: Dynamic Skill Synthesizer]
-    B --> E[VectorDB Memory: Episodic & Semantic]
-    D --> F[Playwright Browser Automation]
-    D --> G[PyWinAuto Desktop Control]
-    E --> H[Reflection Engine & Self-Healing]
+| Audience | Why JARVIS Matters |
+|---|---|
+| **AI/ML Engineers** | Study a production-grade LLM orchestration architecture with 39 specialized modules |
+| **Automation Engineers** | Replace fragile RPA scripts with a self-healing agent that adapts to change |
+| **Developers building agents** | Reference architecture for episodic memory, semantic routing, and dynamic skill synthesis |
+| **Power users** | A local-first, privacy-respecting AI that controls your computer without cloud dependency |
+
+---
+
+## 🔥 The Hook: What Makes JARVIS Different
+
+| Other AI Assistants | J.A.R.V.I.S. Cognitive OS |
+|---|---|
+| Crashes on errors | **Self-heals via Reflection Engine** |
+| Stateless — forgets everything | **Episodic Vector Memory — recalls every past outcome** |
+| Fixed tool set | **Dynamic Skill Synthesizer — writes new tools on the fly** |
+| Always calls the LLM | **Semantic Router handles simple commands in milliseconds** |
+| Generic chatbot interface | **Multi-input: Voice (Whisper STT), GUI, and CLI** |
+| LLM-generated code runs unchecked | **AST Sandbox — un-bypassable security layer** |
+
+---
+
+## ⚡ Key Benefits
+
+- **Zero hand-holding:** Set the goal. JARVIS figures out the path, the tools, and the recovery.
+- **Privacy first:** All memory is stored locally in `memory_db/`. Nothing leaves your machine.
+- **Speed-cost optimized:** The semantic router handles 80% of commands locally. The LLM is only called when cognition is actually needed.
+- **Infinitely extensible:** Every new skill JARVIS synthesizes is permanently available for future tasks.
+- **Windows-native:** Auto-start via `winreg`, desktop control via PyWinAuto, browser automation via Playwright.
+
+---
+
+## 🏛️ Technical Architecture
+
+JARVIS is a non-blocking asynchronous system built on **39 specialized Python modules** organized into a layered cognitive architecture.
+
+```
+JARVIS Cognitive OS
+│
+├── Input Layer
+│   ├── Voice (OpenAI Whisper STT)
+│   ├── GUI (PyWebView interface)
+│   └── CLI (text terminal with /slash commands)
+│
+├── Cognitive Core  
+│   ├── brain.py           — Central orchestration hub
+│   ├── planner.py         — Hierarchical PlanNode tree builder
+│   ├── cognitive_core.py  — High-level goal decomposition
+│   ├── execution_graph.py — Dependency-aware task graph
+│   └── hypothesis_engine.py — Pre-execution failure prediction
+│
+├── Execution Layer
+│   ├── engine.py          — Async orchestrator (main event loop)
+│   ├── plan_executor.py   — Sequential/parallel plan runner
+│   ├── executor.py        — Individual step executor
+│   └── autonomous_loop.py — Continuous background operation
+│
+├── Tool Registry (Sandboxed)
+│   ├── browser_tool.py    — Playwright web automation
+│   ├── desktop_tool.py    — PyWinAuto desktop control
+│   ├── file_tool.py       — File system operations
+│   ├── system_tool.py     — OS-level operations
+│   └── skill_synthesizer.py — Runtime tool generation via LLM + AST sandbox
+│
+├── Memory Subsystem
+│   ├── memory.py          — Episodic + semantic storage
+│   ├── memory_consolidator.py — LFU/LRU cache pruning
+│   └── ChromaDB VectorDB  — Local embedding storage
+│
+└── Recovery & Reflection
+    ├── reflection.py      — Failure analysis engine
+    ├── reflector.py       — Plan rewrite generator
+    └── recovery.py        — Execution resumption after healing
 ```
 
 ### 🧠 LLM Orchestration & Dynamic Tree Planning
-The execution pipeline is not sequential; it is dynamic. High-level directives are parsed by the orchestration layer into a strict hierarchical tree of `PlanNode` objects. This allows the OS to tackle multi-step operations efficiently, routing complex tasks to the LLM and simpler tasks directly to local semantic routers in milliseconds.
+The execution pipeline is not sequential — it is dynamic. High-level directives are parsed into a strict hierarchical tree of `PlanNode` objects. Complex tasks route to the LLM. Simple, recognized tasks route to the local **Semantic Router** in milliseconds — completely bypassing API calls for standard commands.
 
 ### 🪞 The Reflection Engine (Self-Healing System)
-Errors are no longer dead ends. When a sub-task fails (e.g., an API timeout or UI change), J.A.R.V.I.S. triggers the **Reflection Engine**:
-1. It halts the asynchronous task queue.
-2. It analyzes the error logs and environment context autonomously.
-3. It generates a **completely new sub-plan** to bypass the hurdle.
-4. Execution resumes along the new path with zero human intervention required.
+When a sub-task fails:
+1. The async task queue is halted
+2. Error logs and current environment state are analyzed autonomously
+3. A **completely new sub-plan** is generated to bypass the obstacle
+4. Execution resumes along the new path — zero human intervention required
 
-### 💾 Cognitive Memory Subsystems
-J.A.R.V.I.S. possesses true episodic memory:
-*   **Episodic Recall:** Every success and failure is embedded in a local Vector Database. The system autonomously recalls past solutions when facing similar future obstacles.
-*   **Self-Learning Router:** Automatically prunes obsolete vectors using LFU/LRU caching to maintain absolute efficiency, operating within a secure local-first environment without ever leaking personal data.
+### 💾 Cognitive Memory Subsystem
+- **Episodic Recall:** Every success and failure is embedded into a local ChromaDB vector database. Similar future situations trigger automatic recall.
+- **Self-Learning Router:** Learns from confirmed semantic matches. LFU/LRU pruning maintains efficiency over time.
+- **Translation Cache:** A 700KB+ local Turkish-English term cache enables low-latency multilingual operations.
 
----
-
-## 💎 Value Proposition
-
-*   **Absolute Autonomy:** No more hand-holding. Set the objective and let the OS figure out the execution tree.
-*   **Infinite Modularity (Dynamic Skill Synthesizer):** If J.A.R.V.I.S. encounters an unknown tool requirement, it uses the LLM to write its own asynchronous Python tools on the fly, applies strict AST-sandbox security checks, and hot-loads them into the registry.
-*   **Zero-Latency Fallbacks:** The machine learning-based Semantic Router handles standard commands instantly. The LLM is invoked **only** for complex cognitive benchmarks, optimizing both speed and API costs.
-*   **Ironclad Security:** Un-bypassable AST validation prevents LLM-generated code from escaping the sandbox. Dunder attributes and critical system commands are instantly blocked.
+### ⚡ Dynamic Skill Synthesizer
+When JARVIS encounters a tool requirement outside its registry:
+1. It instructs the LLM to write a new async Python tool function
+2. The generated code is validated through **AST security checks** — dunder attributes, `os.system`, `eval`, and `exec` are instantly blocked
+3. The validated tool is hot-loaded into the registry
+4. It remains available for all future tasks in that session
 
 ---
 
-## ✨ Latest Enhancements (v16.5.0)
+## ✨ Latest: v16.5.0 — Settings HUD, Auto-Start & GenAI Migration
 
 > [!IMPORTANT]
-> **Complete Control: Settings HUD, Auto-Start & GenAI Migration**
-> * **[System/UI] Unified Settings Hub:** Deployed a highly requested SETTINGS tab directly into the UI. Users can now natively toggle Windows Auto-Start (`winreg` integrated), dynamically control the Proactive Watcher's observation interval, and switch global language profiles in real-time.
-> * **[Commands] Dynamic Slash Commands:** The OS now natively intercepts `/analysis off` or `/analiz 5` slash commands through the text terminal, immediately updating backend behavior and UI state.
-> * **[Core] Google GenAI SDK Upgrade:** Entirely deprecated `google.generativeai` in favor of the latest `google.genai` client, upgrading core models to `gemini-2.5-flash` for whisper-fast audio and visual reasoning.
+> **Key changes in v16.5.0:**
+> - **Unified Settings Hub:** Native SETTINGS tab in the GUI — toggle Windows auto-start (`winreg`), control the Proactive Watcher interval, and switch language profiles in real-time
+> - **Dynamic Slash Commands:** `/analysis off` and `/analiz 5` commands update backend behavior and UI state instantly via the text terminal
+> - **Google GenAI SDK Upgrade:** Fully migrated from deprecated `google.generativeai` to the latest `google.genai` client; core models upgraded to `gemini-2.5-flash`
 
-*(For a full list of past version histories including v16.4.0, refer to the Changelog section in the codebase.)*
-
----
-
-## 🔒 Security and Privacy Policy
-
-J.A.R.V.I.S. operates fully under a **secure local-first** principle:
-*   **Local Memory Database:** Memory and semantic experience logs are stored in your local `memory_db/` directory, never sent to external servers.
-*   **Sensitive Data Protection (`.gitignore`):** `.env` (API Keys), `contacts.json` (Personal contacts), and local log/error files are protected by an optimized Git exclude list.
+*(Full version history including v16.4.0 and earlier in [CHANGELOG.md](CHANGELOG.md))*
 
 ---
 
-## 🚀 Installation and Usage
+## 🔒 Security & Privacy
 
-### 1. Requirements
-*   **Python 3.11:** Highly recommended for optimal asynchronous performance.
-*   **Playwright Installation (For Web Automation):**
-    ```bash
-    pip install playwright
-    playwright install
-    ```
+JARVIS operates under a **strict local-first security model:**
 
-### 2. Install Dependencies
+- **Local Memory:** All episodic data, vector embeddings, and semantic experience logs are stored in `memory_db/` — never transmitted externally
+- **AST Sandbox:** Every LLM-generated Python tool is validated through an Abstract Syntax Tree inspector before execution. Critical attributes (`__class__`, `__globals__`, etc.) and system commands (`os.system`, `subprocess.call`) are hard-blocked.
+- **Git Hygiene:** `.env` (API keys), `contacts.json`, and all local log/debug files are excluded from the public repository
+
+---
+
+## 🚀 Installation
+
+### Requirements
+- **Python 3.11** (recommended for optimal async performance)
+- **FFmpeg** installed (required for OpenAI Whisper voice commands / Speech-to-Text)
+
+### 📦 FFmpeg Installation
+JARVIS requires `ffmpeg` to capture, convert, and decode voice inputs for the Whisper STT engine.
+
+#### Option A: Windows (Automatic - Recommended)
+Open **Command Prompt (CMD)** or **PowerShell** and run:
 ```bash
-pip install -r requirements.txt
+winget install Gyan.FFmpeg
+```
+*Note: Restart your terminal, CMD, or editor after the installation finishes to apply the system PATH changes.*
+
+#### Option B: Windows (Manual - No System Settings Modified)
+1. Download the essentials archive from [Gyan.dev](https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-essentials.7z).
+2. Extract the archive, go to the `bin/` folder, and copy `ffmpeg.exe`, `ffplay.exe`, and `ffprobe.exe`.
+3. Paste these `.exe` files directly into the root directory of this project (next to `main.py`).
+
+#### Option C: macOS / Linux
+Install via your system's package manager:
+```bash
+# macOS (Homebrew)
+brew install ffmpeg
+
+# Ubuntu / Debian
+sudo apt update && sudo apt install ffmpeg
 ```
 
-### 3. Environment Variables
+### 1. Clone & Install Dependencies
+```bash
+git clone https://github.com/oguzemirtopuz/JARVIS-Cognitive-OS.git
+cd JARVIS-Cognitive-OS
+pip install -r requirements.txt
+playwright install
+```
+
+### 2. Configure Environment
 Create a `.env` file in the root directory:
 ```env
 GROQ_API_KEY=your-groq-api-key
-GOOGLE_API_KEY=your-google-api-key-optional
+GOOGLE_API_KEY=your-google-api-key
 ```
+Get free API keys: [Groq Console](https://console.groq.com) · [Google AI Studio](https://aistudio.google.com)
 
-### 4. Execution Options
-*   **Console Mode:** `python main.py`
-*   **Interface Mode (GUI):** `python launch_jarvis.pyw`
-*   **Windows Startup:** Run `install_startup.bat` to configure background startup.
+### 3. Launch
 
----
-
-## 🌌 Connected Projects & Sister Ecosystems
-If you like **J.A.R.V.I.S.**, check out my other advanced ecosystem:
-* **[YT Analiz Pro - SaaS Edition](https://github.com/oguzemirtopuz/YouTube-Analiz-Uygulamasi-Saas-Edition):** A full-stack YouTube Growth Ecosystem combining a Python FastAPI/OpenCV Desktop App with a Viral Cloning Chrome Extension. Features advanced Multi-Agent Debate for hook generation and custom NLP Chaos Metrics! 🚀
+| Mode | Command |
+|---|---|
+| Console Mode | `python main.py` |
+| GUI Mode | `python launch_jarvis.pyw` |
+| Windows Auto-Start | Run `install_startup.bat` |
 
 ---
 
-## 👤 About the Developer
+## 🗺️ Roadmap
 
-This state-of-the-art framework is developed by **Oğuz Emir Topuz**.
-
-*   **Age:** 15
-*   **Interests & Passions:** A football enthusiast and an advanced software developer.
-*   **What He Does:** Works on SaaS applications, modern and elegant websites, and 3D games.
-*   **Contact & Portfolio:** [My GitHub Profile](https://github.com/OguzEmir177)
+- [ ] Web dashboard for remote task monitoring
+- [ ] Plugin marketplace for community-built tools
+- [ ] Multi-agent collaboration (JARVIS spawning sub-agents)
+- [ ] Mobile voice command integration
+- [ ] Docker containerization for cross-platform deployment
 
 ---
 
-⭐ If you believe in the future of autonomous systems, don't forget to star this repository!
+## 🤝 Contributing
+
+Contributions are welcome. Priority areas:
+
+- New tool implementations (browser, desktop, API integrations)
+- Additional semantic router training patterns
+- Cross-platform support (macOS/Linux testing)
+- New reflection strategy implementations
+
+Please open an issue first to discuss significant changes.
+
+---
+
+## 🌌 Related Projects
+
+- **[YouTube Analyse Pro](https://github.com/oguzemirtopuz/YouTube-Analyse-Pro-SaaS-Edition)** — AI-powered YouTube growth platform using the same async architecture principles
+- **[PyAuditor](https://github.com/oguzemirtopuz/PyAuditor)** — The AST analysis toolkit used to audit JARVIS's own codebase
+
+---
+
+## 📄 License
+
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+  <sub>Built by <a href="https://github.com/oguzemirtopuz">Oğuz Emir Topuz</a></sub>
+  <br/>
+  <sub>⭐ If you believe in the future of autonomous systems, star this repository.</sub>
+</div>
