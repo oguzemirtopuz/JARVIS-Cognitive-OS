@@ -319,9 +319,9 @@ class GroqBrain:
         for i, current_model in enumerate(self.config.brain_models):
             api_kwargs["model"] = current_model
             
-            # [V15.5] Aggressively trim history when dropping to smaller models
-            #8b model has Groq free tier TPM limit 6000 — to fit
-            if "8b" in current_model:
+            # [V15.5] Küçük fallback modele düşünce geçmişi agresif kırpılır
+            # gpt-oss-20b compact model — TPM limiti düşük, sığması için kırp
+            if "20b" in current_model:
                 # Leave only system prompt + system_injection (memory) + last 2 messages + new user input
                 trimmed = [messages[0]]  # system prompt
                 

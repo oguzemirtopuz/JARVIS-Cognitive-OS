@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v16.6.0] - 2026-08-14
+### Changed
+- **[Core/Brain] Groq Model Migration:** Migrated deprecated Groq LLMs (`llama-3.3-70b-versatile`, `llama-3.1-70b-versatile`, `llama-3.1-8b-instant`) to production-ready open-weight alternatives:
+  - Primary Brain & Reflection Engine: Upgraded to `qwen/qwen3.6-27b` providing high throughput (250K TPM on Groq Free Tier), 131K context window, native reasoning traces, and structured tool calling.
+  - Fast Fallback & Translator: Upgraded to `openai/gpt-oss-20b` for low-latency Turkish translations in `io_bridge.py` and secondary fallback in `core/config.py`.
+- **[STT] Audio Polisher Migration:** Updated Groq-based audio transcript polisher in `audio/stt.py` to use `qwen/qwen3.6-27b`.
+- **[Brain] Dynamic History Trimming:** Adapted token-limit history pruning inside `core/brain.py` to target compact 20B models to avoid rate limit breaches on free tiers.
+
+### Added
+- **[Planner/Reflection] Multi-Action Goal Decomposition:** Enhanced prompt constraints in `core/planner.py` to automatically split compound user instructions (separated by commas, 've', 'ardından', 'sonra') into sequential DAG nodes.
+- **[Native Ops] Desktop Application Aliases:** Extended Turkish alias mappings in `tools/utils/native_ops.py` for Calculator (`hesap makinesi`), Notepad (`not defteri`), File Explorer (`dosya gezgini`), CMD (`komut istemi`), and Windows Settings (`ayarlar`).
+
+---
+
 ## [v16.5.1] - 2026-06-03
 ### Added
 - **[System/UI] Dual-Engine Logging & TTS:** Implemented a new intelligent translation layer inside `io_bridge.py`. When the UI language is set to Turkish, J.A.R.V.I.S. continues to use English for its Text-To-Speech (TTS) engine to avoid accent distortions, but dynamically translates its spoken text into Turkish for the UI LOG panel using either a rapid static dictionary or an asynchronous LLM call.

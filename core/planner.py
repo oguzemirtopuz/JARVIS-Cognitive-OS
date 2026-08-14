@@ -163,6 +163,40 @@ class PlannerEngine:
             logger.info(f"REPAIR: Replaced {failed.action} with {alt_tool}")
             return True
 
+        # [DEMO MODE] APP_OPEN Reflection
+        if failed.action == "APP_OPEN":
+            app_name = failed.params.get("app_name", "").lower()
+            aliases = []
+            if "hesap" in app_name or "calc" in app_name:
+                aliases = ["calculator", "calc.exe", "Windows Calculator"]
+            elif "not defteri" in app_name or "notepad" in app_name:
+                aliases = ["notepad", "notepad.exe", "Windows Notepad"]
+            elif "whatsapp" in app_name:
+                aliases = ["whatsapp", "WhatsApp Desktop"]
+
+            aliases = [a for a in aliases if a.lower() != app_name]
+            
+            # Use the attempt count based on replan_count to pick an alias
+            # Ensure we try at least 3 alternatives before giving up
+            idx = self._replan_count - 1
+            if idx < len(aliases):
+                alt_app = aliases[idx]
+                new_params = failed.params.copy()
+                new_params["app_name"] = alt_app
+                
+                # Highlight in DEMO MODE
+                if getattr(self.brain.config, "demo_mode", False):
+                    print(f"\n[🚀 DEMO MODE: REFLECTION] APP_OPEN başarısız oldu: '{app_name}'. Alternatif deneniyor: '{alt_app}'...")
+                    
+                new_id = await graph.inject_node(
+                    NodeType.TOOL_CALL, "APP_OPEN",
+                    params=new_params, after_node_id=None)
+                for n in graph.nodes.values():
+                    if failed_node_id in n.dependencies and n.status == NodeStatus.PENDING:
+                        await graph.rewire_dependency(n.id, failed_node_id, new_id)
+                logger.info(f"REPAIR: Retrying APP_OPEN with alias '{alt_app}'")
+                return True
+
         # Strategy 3: Skip and inject reasoning node to explain
         await graph.skip_node(failed_node_id, f"Repair failed: {error[:50]}")
         await graph.inject_node(
@@ -209,6 +243,7 @@ Return JSON ONLY: {{"nodes": [{{"id": "s1", "type": "tool_call", "action": "TOOL
         return f"""[GOAL]: {goal}
 [STATE]: {json.dumps(state)}
 Create DAG plan for the task. Let each step be small and verifiable.
+CRITICAL RULE: If the goal contains multiple distinct actions separated by commas, 've', 'ardından', or 'sonra' (e.g. 'Hesap makinesini aç, 2026 ile 15'i çarp, sonucu söyle' or 'Google'dan dolar kurunu öğren, masaüstüne kaydet, not defterinde aç'), YOU MUST break it down into multiple separate, sequential 'tool_call' nodes (e.g. APP_OPEN -> CALCULATE -> SPEAK_RESULT). DO NOT combine multiple actions into a single node.
 Node types: tool_call, reasoning, memory_retrieval, validation, reflection
 JSON ONLY: {{"reasoning_trace": "...", "nodes": [{{"id": "s1", "type": "tool_call", "action": "TOOL", "params": {{}}, "deps": [], "max_retries": 3}}]}}"""
 

@@ -203,7 +203,7 @@ class Reflector:
 
             # brain.think() is now async
             llm_response_obj = await self.brain.client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="qwen/qwen3.6-27b",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.0,
                 max_tokens=150,

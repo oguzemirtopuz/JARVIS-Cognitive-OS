@@ -70,7 +70,7 @@ def _polish_with_groq(raw_text: str, api_key: str) -> Optional[str]:
     try:
         client = Groq(api_key=api_key)
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="qwen/qwen3.6-27b",
             messages=[
                 {"role": "system", "content": _POLISHER_SYSTEM_PROMPT},
                 {"role": "user", "content": raw_text}

@@ -59,15 +59,17 @@ class EngineConfig:
 
     # ── LLM Model Fallback Chain ──
     brain_models: list = field(default_factory=lambda: [
-        "llama-3.3-70b-versatile", # Most advanced model (Llama 3.3)
-        "llama-3.1-70b-versatile", # Powerful backup
-        "llama-3.1-8b-instant"     # Fast fallback
+        "qwen/qwen3.6-27b",       # Ana model — yüksek TPM, reasoning desteği
+        "openai/gpt-oss-20b",     # Hızlı fallback — compact MoE model
     ])
     ping_model: str = None         # Fallback test model (if None, brain_models[0] is used)
     function_calling_enabled: bool = False  # [V9.7] Disabled: Forces LLM to generate [PLAN] text directly.
 
     # ── Reflection ──
     reflection_cooldown_s: float = 5.0
+
+    # ── Demo Mode (YouTube) ──
+    demo_mode: bool = True
 
     # ── Storage & Paths ──
     memory_db_path: str = "./memory_db"

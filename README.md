@@ -134,15 +134,15 @@ When JARVIS encounters a tool requirement outside its registry:
 
 ---
 
-## ✨ Latest: v16.5.0 — Settings HUD, Auto-Start & GenAI Migration
+## ✨ Latest: v16.6.0 — Groq Model Migration & High-Throughput Engine Upgrades
 
 > [!IMPORTANT]
-> **Key changes in v16.5.0:**
-> - **Unified Settings Hub:** Native SETTINGS tab in the GUI — toggle Windows auto-start (`winreg`), control the Proactive Watcher interval, and switch language profiles in real-time
-> - **Dynamic Slash Commands:** `/analysis off` and `/analiz 5` commands update backend behavior and UI state instantly via the text terminal
-> - **Google GenAI SDK Upgrade:** Fully migrated from deprecated `google.generativeai` to the latest `google.genai` client; core models upgraded to `gemini-2.5-flash`
+> **Key changes in v16.6.0:**
+> - **Groq Model Migration:** Proactively migrated from deprecated Groq LLMs (`llama-3.3-70b`, `llama-3.1-70b`, `llama-3.1-8b`) to `qwen/qwen3.6-27b` (primary brain & reflection with 250K TPM) and `openai/gpt-oss-20b` (low-latency fallback & translator).
+> - **Compound Goal Decomposition:** Upgraded `core/planner.py` to seamlessly decompose complex multi-step commands into granular, verifiable DAG execution graphs.
+> - **Expanded Native Desktop Aliases:** Enhanced Turkish voice/text application routing for calculator, notepad, explorer, CMD, and settings in `tools/utils/native_ops.py`.
 
-*(Full version history including v16.4.0 and earlier in [CHANGELOG.md](CHANGELOG.md))*
+*(Full version history in [CHANGELOG.md](CHANGELOG.md))*
 
 ---
 

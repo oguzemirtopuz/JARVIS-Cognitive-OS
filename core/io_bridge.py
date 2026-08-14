@@ -193,7 +193,7 @@ class IOBridge:
         try:
             client = AsyncGroq(api_key=api_key)
             response = await client.chat.completions.create(
-                model="llama3-8b-8192",
+                model="openai/gpt-oss-20b",
                 messages=[
                     {"role": "system", "content": "You are a professional translator. Translate the given English text to Turkish. Maintain the polite tone (like Efendim). Return ONLY the translated Turkish text, nothing else."},
                     {"role": "user", "content": clean_text}
