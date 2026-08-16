@@ -306,9 +306,9 @@ class AdaptiveLearner:
         text = text.strip().lower()
         # Skip multiple spaces
         text = re.sub(r'\s+', ' ', text)
-        # Remove common Turkish suffixes (simple stemming)
-        text = re.sub(r"'?[yiiuü]$", "", text)  # "chrome'u" → "chrome"
-        text = re.sub(r"'?[yiiuü]n[ıiuü]$", "", text)  # "chrome'unu" → "chrome"
+        # Bug #3 fix: Türkçe noktasız ı eklendi, yanlış y kaldırıldı
+        text = re.sub(r"'?[ıiuü]$", "", text)  # "chrome'u" → "chrome"
+        text = re.sub(r"'?[ıiuü]n[ıiuü]$", "", text)  # "chrome'unu" → "chrome"
         return text.strip()
 
     def _prune_strategies(self, max_strategies: int = 200) -> None:

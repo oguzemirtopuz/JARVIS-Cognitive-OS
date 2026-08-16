@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v16.7.0] - 2026-08-16
+### Fixed
+- **[System/Tools] Parameter Parsing Order (`BUG #1`):** Fixed a critical `AttributeError` in `LLMEvalTool` and `YouTubeStrategyTool` where `.get()` was invoked before `isinstance(params, str)` type checking.
+- **[Core/Cognition] Telemetry State Reliability (`BUG #2`):** Removed fragile `'situation' in dir()` lookup in `core/autonomous_loop.py`, guaranteeing deterministic cycle telemetry logging even across exception handlers.
+- **[Learner] Turkish Stemming Regex Suffixes (`BUG #3`):** Added missing dotless `ı` and eliminated false-positive `y` stripping in `core/adaptive_learner.py` Turkish morphology stemmer (`[yiiuü]` → `[ıiuü]`).
+- **[Audio/TTS] Singleton Race Condition & Cache Eviction (`BUG #4`, `#7`, `#14`):**
+  - Integrated `threading.Lock` across concurrent TTS threads sharing the singleton `pygame.mixer.music` channel to prevent playback cut-offs and state collisions.
+  - Guarded `pygame.mixer.music.unload()` with a loaded verification flag to prevent unloading non-existent audio handles.
+  - Implemented bounded eviction for `_TRANSLATION_CACHE` (capped at 500 entries) preventing long-term memory leaks.
+- **[Core/EventBus] Wildcard Double-Dispatch & Error Propagation (`BUG #5`, `#6`, `#10`, `#11`):**
+  - Resolved double event triggering on wildcard dispatch (`emit("*")`).
+  - Added exception inspection on `asyncio.gather` tasks to prevent subscriber errors from being silently discarded.
+  - Converted history storage from list to `collections.deque(maxlen=100)` for $O(1)$ amortized memory operations.
+- **[Core/Executor] Timeout Telemetry & Context Immutability (`BUG #8`, `#9`):**
+  - Ensured all tool timeout instances trigger `telemetry.log_tool_execution()`.
+  - Enforced read-only engine context guarantees by shallow-copying `engine_context` before injecting internal references.
+- **[Security/Stability] Exception Hygiene (`BUG #12`):** Replaced bare `except:` clauses with explicit `except Exception:` across 7 modules (`contact_manager.py`, `goals.py`, `plan_executor.py`, `vision.py`, `analiz_pro_tool.py`, `native_ops.py`, `tts.py`), ensuring system signals (`KeyboardInterrupt`, `SystemExit`) are never intercepted.
+- **[Tools/Browser] Async State Lock (`BUG #13`):** Added asynchronous lock guards around module-level URL state in `tools/browser_tool.py`.
+
+---
+
 ## [v16.6.0] - 2026-08-14
 ### Changed
 - **[Core/Brain] Groq Model Migration:** Migrated deprecated Groq LLMs (`llama-3.3-70b-versatile`, `llama-3.1-70b-versatile`, `llama-3.1-8b-instant`) to production-ready open-weight alternatives:

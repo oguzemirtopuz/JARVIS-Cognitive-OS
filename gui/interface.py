@@ -1532,25 +1532,61 @@ class JarvisInterface:
         sys.stdout = GUIStream(self._append_log_auto)
 
         class StderrStream(io.IOBase):
+            # [V16.7] Akıllı stderr filtreleme — sahte CRITICAL ERROR önleme
+            # Sadece gerçek Python Traceback/Exception → [CRITICAL ERROR]
+            # WARNING/Deprecation → [WARNING] (bastırılabilir)
+            # Kütüphane gürültüsü → tamamen filtrelenir
+            _NOISE_KEYWORDS = frozenset([
+                "Loading weights", "BertModel LOAD REPORT", "embeddings.position_ids",
+                "UNEXPECTED", "HF_TOKEN", "unauthenticated requests", "huggingface.co",
+                "Key                     | Status", "------------------------+",
+                "Notes:", "can be ignored when loading",
+                # Yaygın kütüphane gürültüleri
+                "pygame", "comtypes", "urllib3", "asyncio", "charset_normalizer",
+                "numba", "tqdm", "pkg_resources", "DeprecationWarning",
+                "FutureWarning", "UserWarning", "ResourceWarning",
+                "RuntimeWarning", "PendingDeprecationWarning",
+                "InsecureRequestWarning", "NotOpenSSLWarning",
+            ])
+            _ERROR_MARKERS = frozenset([
+                "Traceback (most recent call last)", "Error:", "Exception:",
+                "CRITICAL", "FATAL", "raise ", "AssertionError",
+            ])
+
             def __init__(self, callback):
                 self.callback = callback
                 self._buf = ""
+
+            def _classify_and_emit(self, line_stripped):
+                """Satırı sınıflandırıp uygun etiketle GUI'ye gönderir."""
+                if not line_stripped:
+                    return
+                # Kütüphane gürültüsü → tamamen atla
+                if any(kw in line_stripped for kw in self._NOISE_KEYWORDS):
+                    return
+                # Gerçek hata belirteci → [CRITICAL ERROR]
+                if any(em in line_stripped for em in self._ERROR_MARKERS):
+                    self.callback(f"[CRITICAL ERROR] {line_stripped}")
+                    return
+                # WARNING içeriyorsa → [WARNING]
+                if "WARNING" in line_stripped or "Warning" in line_stripped:
+                    self.callback(f"[WARNING] {line_stripped}")
+                    return
+                # Geri kalan → [SYSTEM LOG] (zararsız çıktı)
+                self.callback(f"[SYSTEM LOG] {line_stripped}")
+
             def write(self, text):
                 self._buf += text
                 if "\n" in self._buf:
                     lines = self._buf.split("\n")
                     for line in lines[:-1]:
-                        line_stripped = line.strip()
-                        if line_stripped:
-                            if any(x in line_stripped for x in ["Loading weights", "BertModel LOAD REPORT", "embeddings.position_ids", "UNEXPECTED", "HF_TOKEN", "unauthenticated requests", "huggingface.co", "Key                     | Status", "------------------------+", "Notes:", "can be ignored when loading"]):
-                                continue
-                            self.callback(f"[CRITICAL ERROR] {line_stripped}")
+                        self._classify_and_emit(line.strip())
                     self._buf = lines[-1]
                 return len(text)
+
             def flush(self):
                 if self._buf.strip():
-                    if not any(x in self._buf for x in ["Loading weights", "BertModel", "UNEXPECTED", "HF_TOKEN", "Key                     | Status", "------------------------+", "Notes:"]):
-                        self.callback(f"[CRITICAL ERROR] {self._buf.strip()}")
+                    self._classify_and_emit(self._buf.strip())
                     self._buf = ""
         sys.stderr = StderrStream(self._append_log_auto)
 

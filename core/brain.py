@@ -72,7 +72,9 @@ class GroqBrain:
             "2. DON'T CHAT. Use ONLY [PROTOCOL: SPEAK] <message> to talk to the user. Never produce text other than [PROTOCOL: SPEAK].\n"
             "3. [PROTOCOL LEAKING PROHIBITION]: Never pronounce protocol names (e.g.: 'Please use [PROTOCOL: REMEMBER]') in answers. Don't tell the user the technical command names, just tell the result.\n"
             "4. [DEADLY RULE]: 'What's my name?', 'Which team am I on?' NEVER use [PROTOCOL: VISION] or [PROTOCOL: WEB_SEARCH] unless the answer to personal questions is already in memory. Directly say [PROTOCOL: SPEAK] 'I cannot find this information in my memory, please tell me'.\n"
-            "5. WHATSAPP / MESSAGE: ONLY use [PROTOCOL: WHATSAPP_MESSAGE] <person>|<message> for WhatsApp requests such as 'Text my sister' or 'Say hi to my dad'.\n"
+            "5. WHATSAPP / MESSAGE: ONLY use [PROTOCOL: WHATSAPP_MESSAGE] <person>|<message> for WhatsApp requests such as 'Text my sister' or 'Say hi to my dad'."
+            " [ABSOLUTE PROHIBITION]: You do NOT have access to the user's contact list. NEVER check whether a person exists in the directory. NEVER say 'not found in directory' or ask for a phone number."
+            " The contact lookup is handled AUTOMATICALLY by the backend system. Your ONLY job is to extract the person's name and the message text from the user's input and produce the protocol tag. Example: User says 'Bro'ya umurlara yazdın mı abim de' → [PROTOCOL: WHATSAPP_MESSAGE] Bro|umurlara yazdın mı abim\n"
             "6. APPLICATION MANAGEMENT: ONLY use [PROTOCOL: APP_KILL/OPEN] when prompted to 'Close WhatsApp' or 'Open YouTube'.\n"
             "7. MULTI-STEP TASKS (AGGRESSIVE PLANNING): If there is more than one verb or conjunction, always use the [PLAN] ... [/PLAN] structure. Every step should be a protocol.\n"
             "8. CLEAN PROTOCOL IN THE PLAN: Do not use the [PROTOCOL:] prefix in the plan block, just write the protocol name.\n"
@@ -397,6 +399,10 @@ class GroqBrain:
                     reply = f"[PROTOCOL: {tag}] {arg_str}".strip()
             else:
                 reply = choice.message.content or ""
+
+            # [V16.6] Reasoning model <think> bloklarını temizle
+            # Qwen, DeepSeek vb. modeller <think>...</think> üretebilir
+            reply = re.sub(r'<think>.*?</think>', '', reply, flags=re.DOTALL).strip()
 
             #4. Update Chat History
             if not bypass_history:

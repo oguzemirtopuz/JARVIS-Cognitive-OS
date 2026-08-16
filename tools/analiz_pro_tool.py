@@ -28,7 +28,7 @@ class AnalizProTool(BaseTool):
                     data = res.json()
                     if data.get("session") and data["session"].get("user_id"):
                         return data["session"]["user_id"]
-            except:
+            except Exception:
                 pass
             return 1 # Fallback
             

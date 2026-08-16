@@ -87,6 +87,8 @@ class AutonomousCognitionLoop:
             cycle_start = time.time()
             self._cycles_count += 1
 
+            # Bug #2 fix: exception durumunda telemetri için varsayılan değer
+            situation = {}
             try:
                 # ═══════════════════════════════════════════
                 #  PHASE 1: PERCEIVE
@@ -137,7 +139,7 @@ class AutonomousCognitionLoop:
 
             # Log cycle telemetry periodically
             if self._cycles_count % 50 == 0:
-                self._log_telemetry(situation if 'situation' in dir() else {})
+                self._log_telemetry(situation)
 
             # Sleep until next cycle
             elapsed = (time.time() - cycle_start) * 1000

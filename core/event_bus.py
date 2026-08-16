@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from collections import deque
 from typing import Callable, Dict, List, Any
 from dataclasses import dataclass
 from datetime import datetime
@@ -29,8 +30,8 @@ class EventBus:
     """
     def __init__(self):
         self._subscribers: Dict[str, List[Callable]] = {}
-        self._history: List[JarvisEvent] = []
-        self._max_history = 100
+        # Bug #11 fix: list yerine deque — pop(0) O(1) olur
+        self._history: deque = deque(maxlen=100)
 
     def subscribe(self, event_name: str, callback: Callable):
         if event_name not in self._subscribers:
@@ -41,9 +42,7 @@ class EventBus:
     def publish(self, event_name: str, data: Any, sender: str = "system"):
         """Alias for emit used by validation tests."""
         event = JarvisEvent(name=event_name, data=data, sender=sender)
-        self._history.append(event)
-        if len(self._history) > self._max_history:
-            self._history.pop(0)
+        self._history.append(event)  # deque maxlen otomatik kırpar
 
         loop = None
         try:
@@ -59,7 +58,8 @@ class EventBus:
                     try: callback(event)
                     except Exception as e: logger.error(f"Sync callback error: {e}")
 
-        if "*" in self._subscribers:
+        # Bug #5 fix: Wildcard çift tetiklemeyi önle
+        if "*" in self._subscribers and event_name != "*":
             for callback in self._subscribers["*"]:
                 if asyncio.iscoroutinefunction(callback):
                     if loop: loop.create_task(callback(event))
@@ -69,9 +69,7 @@ class EventBus:
 
     async def emit(self, event_name: str, data: Any, sender: str = "system"):
         event = JarvisEvent(name=event_name, data=data, sender=sender)
-        self._history.append(event)
-        if len(self._history) > self._max_history:
-            self._history.pop(0)
+        self._history.append(event)  # deque maxlen otomatik kırpar
 
         logger.info(f"Event: {event_name} from {sender}")
         
@@ -87,12 +85,16 @@ class EventBus:
             
             if tasks:
                 try:
-                    await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=5.0)
+                    # Bug #6 fix: gather sonuçlarını kontrol et
+                    results = await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=5.0)
+                    for r in results:
+                        if isinstance(r, Exception):
+                            logger.error(f"EventBus subscriber hatası '{event_name}': {r}")
                 except asyncio.TimeoutError:
                     logger.error(f"EventBus Timeout: {event_name} dinleyicilerinden biri dondu!")
         
-        # Also notify wildcard subscribers
-        if "*" in self._subscribers:
+        # Bug #5 fix: Wildcard çift tetiklemeyi önle
+        if "*" in self._subscribers and event_name != "*":
             tasks = []
             for callback in self._subscribers["*"]:
                 if asyncio.iscoroutinefunction(callback):
@@ -103,7 +105,11 @@ class EventBus:
                     tasks.append(loop.run_in_executor(None, callback, event))
             if tasks:
                 try:
-                    await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=5.0)
+                    # Bug #6 fix: gather sonuçlarını kontrol et
+                    results = await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=5.0)
+                    for r in results:
+                        if isinstance(r, Exception):
+                            logger.error(f"EventBus wildcard subscriber hatası '{event_name}': {r}")
                 except asyncio.TimeoutError:
                     logger.error("EventBus Timeout: Wildcard (*) dinleyicilerinden biri dondu!")
 

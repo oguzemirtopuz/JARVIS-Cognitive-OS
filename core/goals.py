@@ -53,7 +53,7 @@ class Goal:
         try:
             last = datetime.fromisoformat(self.last_activity).timestamp()
             return (time.time() - last) / 3600.0
-        except: return 0.0
+        except Exception: return 0.0
 
 
 class GoalManager:
@@ -248,7 +248,7 @@ class GoalManager:
                 try:
                     created = datetime.fromisoformat(goal.created_at).timestamp()
                     if (now - created) / 86400 > max_days: goal.status = "archived"
-                except: pass
+                except Exception: pass
         self.save_goals()
 
     def archive_goal(self, goal_id: str):

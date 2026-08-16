@@ -8,6 +8,8 @@ import logging
 
 # [V15.5] Translation cache — same sentence is translated once, instant return on subsequent calls
 _TRANSLATION_CACHE: dict = {}
+_MAX_CACHE_SIZE = 500  # Bug #7 fix: Cache boyut sınırı
+_tts_lock = threading.Lock()  # Bug #4 fix: Eşzamanlı ses çalma koruması
 
 class TextToSpeech:
     def __init__(self):
@@ -23,7 +25,13 @@ class TextToSpeech:
         thread.start()
         
     def _play_audio(self, text: str, voice: str):
+        # Bug #4 fix: Aynı anda tek bir ses çalmasını garanti et
+        with _tts_lock:
+            self._play_audio_inner(text, voice)
+
+    def _play_audio_inner(self, text: str, voice: str):
         temp_path = None
+        _loaded = False  # Bug #4b fix: unload güvenliği
         try:
             # Default rate and pitch for RyanNeural (charismatic)
             rate = "+0%"
@@ -68,12 +76,16 @@ class TextToSpeech:
                         translated = await loop.run_in_executor(None, _do_translate)
                         if translated:
                             _TRANSLATION_CACHE[text] = translated
+                            # Bug #7 fix: Cache boyutunu kontrol et
+                            if len(_TRANSLATION_CACHE) > _MAX_CACHE_SIZE:
+                                keys = list(_TRANSLATION_CACHE.keys())
+                                for k in keys[:len(keys)//2]:
+                                    del _TRANSLATION_CACHE[k]
                             speech_text = translated
                     except urllib.error.HTTPError as e:
                         if e.code == 429:
                             # Rate limit — wait 3 seconds and retry twice
                             for retry_count in range(2):
-                                # logging.warning(f"TTS: 429 Rate Limit (Attempt {retry_count+1}), waiting 3s...")
                                 await asyncio.sleep(3)
                                 try:
                                     translated = await loop.run_in_executor(None, _do_translate)
@@ -84,9 +96,9 @@ class TextToSpeech:
                                 except Exception:
                                     continue
                         else:
-                            pass # logging.warning(f"TTS Translation HTTP error ({e.code}): {e} — using original text")
+                            pass
                     except Exception as e:
-                        pass # logging.warning(f"TTS Translation error: {e} — using original text")
+                        pass
                 # ──────────────────────────────────────────────────────────
                     
                 retries = 3
@@ -98,7 +110,6 @@ class TextToSpeech:
                         return True
                     except Exception as e:
                         if attempt < retries - 1:
-                            # print(f"[TTS_RETRY] Attempt {attempt+1} failed: {e}. Retrying...")
                             await asyncio.sleep(0.5)
                         else:
                             raise e
@@ -109,6 +120,7 @@ class TextToSpeech:
             # Play the generated file with Pygame
             if os.path.exists(temp_path) and os.path.getsize(temp_path) > 0:
                 pygame.mixer.music.load(temp_path)
+                _loaded = True  # Bug #4b: load başarılı
                 pygame.mixer.music.play()
             else:
                 raise Exception("Audio file could not be created.")
@@ -118,17 +130,16 @@ class TextToSpeech:
                 pygame.time.Clock().tick(10)
                 
         except Exception as e:
-            # print(f"\n[AUDIO MODULE ERROR]: Could not generate speech via edge-tts: {str(e)}")
-            # [V8.2 FIXED] pyttsx3 fallback disabled.
-            # Continuing silently to prevent asyncio loop conflicts and "run loop already started" errors.
-            # logging.warning(f"TTS failed (Internet/DNS?), continuing silently. Detail: {e}")
             return
             
         finally:
-            pygame.mixer.music.unload()
+            # Bug #4b fix: Sadece load() başarılıysa unload() çağır
+            if _loaded:
+                pygame.mixer.music.unload()
             # Clean up temp files
             if temp_path and os.path.exists(temp_path):
                 try:
                     os.remove(temp_path)
-                except:
+                except Exception:  # Bug #12 fix: bare except düzeltildi
                     pass
+

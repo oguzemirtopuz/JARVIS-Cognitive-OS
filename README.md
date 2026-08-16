@@ -134,13 +134,13 @@ When JARVIS encounters a tool requirement outside its registry:
 
 ---
 
-## ✨ Latest: v16.6.0 — Groq Model Migration & High-Throughput Engine Upgrades
-
-> [!IMPORTANT]
-> **Key changes in v16.6.0:**
-> - **Groq Model Migration:** Proactively migrated from deprecated Groq LLMs (`llama-3.3-70b`, `llama-3.1-70b`, `llama-3.1-8b`) to `qwen/qwen3.6-27b` (primary brain & reflection with 250K TPM) and `openai/gpt-oss-20b` (low-latency fallback & translator).
-> - **Compound Goal Decomposition:** Upgraded `core/planner.py` to seamlessly decompose complex multi-step commands into granular, verifiable DAG execution graphs.
-> - **Expanded Native Desktop Aliases:** Enhanced Turkish voice/text application routing for calculator, notepad, explorer, CMD, and settings in `tools/utils/native_ops.py`.
+## ✨ Latest: v16.7.0 — Cognitive OS Systemic Hardening & Logical Bug Fixes
+ 
+ > [!IMPORTANT]
+ > **Key changes in v16.7.0:**
+ > - **Cognitive OS Hardening:** Fixed 14 systemic logical bugs including parameter parsing edge-cases, audio concurrency race conditions, and EventBus wildcard double-dispatch.
+ > - **Deterministic Telemetry & Memory Safety:** Guaranteed exception-resilient cognition loop telemetry and bounded cache eviction policies.
+ > - **Exception Clean-Up:** Full removal of bare `except:` statements across all core subsystems for reliable system lifecycle management.
 
 *(Full version history in [CHANGELOG.md](CHANGELOG.md))*
 

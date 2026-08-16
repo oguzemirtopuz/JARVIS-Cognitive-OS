@@ -42,57 +42,71 @@ class PythonExecutionTool(BaseTool):
         # Discard empty lines and recombine
         code = "\n".join(line for line in code.splitlines() if line.strip()).strip()
 
-        # Redirect stdout to capture output (print)
-        old_stdout = sys.stdout
-        redirected_output = io.StringIO()
-        sys.stdout = redirected_output
+        step_data = engine_context.get("step_results", {}) if engine_context else {}
+
+        def _run_code_in_thread():
+            """[V16.7] exec() ayrı thread'de çalışır — event loop kilidi önlenir.
+            Böylece executor.py'deki asyncio.wait_for(60s) timeout devreye girebilir."""
+            old_stdout = sys.stdout
+            redirected_output = io.StringIO()
+            sys.stdout = redirected_output
+            try:
+                exec_globals = {
+                    "step_results": step_data,
+                    "input": _blocked_input,
+                    "__builtins__": __builtins__,
+                }
+                exec(code, exec_globals)
+                return ("ok", redirected_output.getvalue().strip())
+            except NotImplementedError as e:
+                return ("sandbox", str(e))
+            except Exception as e:
+                return ("error", str(e), traceback.format_exc())
+            finally:
+                # stdout'u her halükarda geri yükle
+                sys.stdout = old_stdout
 
         try:
-            # Run the code in J.A.R.V.I.S.'s own memory (local)
-            # Inject the results of previous steps into the code as a safe dictionary (dict)
-            step_data = engine_context.get("step_results", {}) if engine_context else {}
-            exec_globals = {
-                "step_results": step_data,
-                # [SAFE SANDBOX] Protect system from crash by blocking input() call
-                "input": _blocked_input,
-                "__builtins__": __builtins__,
-            }
-            
-            exec(code, exec_globals)
-            output = redirected_output.getvalue().strip()
-            
+            import asyncio
+            loop = asyncio.get_running_loop()
+            result_tuple = await loop.run_in_executor(None, _run_code_in_thread)
+        except Exception as e:
+            logger.error(f"[PythonExec] Thread execution error: {e}")
+            return ToolResult(
+                success=False, verified=False, error="ThreadError",
+                message=f"Code execution thread failed: {str(e)}",
+                speak="Sir, there was an error running the code."
+            )
+
+        # Thread sonuçlarını işle
+        status = result_tuple[0]
+
+        if status == "ok":
+            output = result_tuple[1]
             if not output:
                 output = "The code ran successfully but did not print anything to the screen."
-                
             return ToolResult(
-                success=True, 
-                verified=True, 
-                message=f"Code Output:\n{output}", 
+                success=True, verified=True,
+                message=f"Code Output:\n{output}",
                 speak="The code has been run, I am interpreting the result, Sir...",
                 data={"output": output},
                 next_action="PYTHON_INTERPRET"
             )
-        except NotImplementedError as e:
-            # input() sandbox error — return a meaningful message to LLM
-            logger.warning(f"[PythonExec] Sandbox violation (input() call): {e}")
+        elif status == "sandbox":
+            error_msg = result_tuple[1]
+            logger.warning(f"[PythonExec] Sandbox violation (input() call): {error_msg}")
             return ToolResult(
-                success=False, 
-                verified=False, 
-                error="SandboxError", 
-                message=f"ERROR: {str(e)}\n\nSolution: Regenerate the code without input(), by writing the values ​​directly.",
+                success=False, verified=False, error="SandboxError",
+                message=f"ERROR: {error_msg}\n\nSolution: Regenerate the code without input(), by writing the values directly.",
                 speak="Sir, I used input() in the code I wrote. It is prohibited in this environment. I'm fixing the code."
             )
-        except Exception as e:
-            error_msg = traceback.format_exc()
-            logger.error(f"[PythonExec] Code Error:\n{error_msg}")
+        else:  # "error"
+            error_str = result_tuple[1]
+            error_tb = result_tuple[2]
+            logger.error(f"[PythonExec] Code Error:\n{error_tb}")
             return ToolResult(
-                success=False, 
-                verified=False, 
-                error="ExecError", 
-                message=f"There was an error in the code you wrote:\n{str(e)}\n\nExact error:\n{error_msg}", 
+                success=False, verified=False, error="ExecError",
+                message=f"There was an error in the code you wrote:\n{error_str}\n\nExact error:\n{error_tb}",
                 speak="Sir, there was an error in the code I wrote."
             )
-        finally:
-            # Reset stdout (Very critical or J.A.R.V.I.S. will go blind)
-            sys.stdout = old_stdout
 

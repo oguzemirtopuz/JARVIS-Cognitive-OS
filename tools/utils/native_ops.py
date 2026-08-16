@@ -195,7 +195,7 @@ class NativeOps:
                 path, _ = winreg.QueryValueEx(key, "")
                 if path and os.path.exists(path):
                     return path
-            except:
+            except Exception:
                 continue
         return ""
 

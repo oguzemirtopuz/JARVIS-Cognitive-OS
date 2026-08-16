@@ -137,7 +137,8 @@ class Executor:
 
         # Parameter preparation — first parameter = argument
         params = self._build_params(tool, interpolated_arg)
-        ctx = engine_context or {}
+        # Bug #9 fix: Çağrıcının context'ini doğrudan mutate etme, kopya oluştur
+        ctx = dict(engine_context) if engine_context else {}
         ctx["brain"] = self.brain  # [V9.0] Add brain reference for file summarization
 
         # Pre-speak (for long-running tools)
@@ -192,6 +193,17 @@ class Executor:
         except asyncio.TimeoutError:
             duration_ms = int((time.monotonic() - start_time) * 1000)
             logger.error(f"Tool timeout: {tool.name} (time: {duration_ms}ms, limit={timeout}s)")
+            # Bug #8 fix: Timeout durumunda da telemetri kaydet
+            trace_id = engine_context.get("task_id", "unknown") if engine_context else "unknown"
+            telemetry.log_tool_execution(
+                trace_id=trace_id,
+                tool_name=tool.protocol_tag,
+                input_params=params,
+                duration_ms=duration_ms,
+                success=False,
+                output="",
+                error=f"Timeout ({timeout:.0f}s)"
+            )
             return ToolResult(
                 success=False,
                 verified=False,

@@ -154,38 +154,28 @@ class WhatsAppTool(BaseTool):
 
 
 
-            # Check number
-
+            # [V16.6] Rehber eşleştirme — kurşun geçirmez versiyon
             loop = asyncio.get_running_loop()
-
             phone_number = await loop.run_in_executor(
-
                 None, self._resolve_phone_number, recipient
-
             )
 
-
+            # None = rehberde bulunamadı, geçerli numara da değil
+            if phone_number is None:
+                return ToolResult(
+                    success=False, verified=False, error="ContactNotFound",
+                    message=f"'{recipient}' was not found in contacts.json.",
+                    speak=f"Sir, '{recipient}' is not registered in your contact directory.",
+                )
 
             phone_clean = re.sub(r"[^\d\+]", "", phone_number)
-
             is_valid = bool(phone_clean and len(phone_clean) >= 7)
 
-
-
-            if not phone_number or not is_valid:
-
+            if not is_valid:
                 return ToolResult(
-
-                    success=False, verified=False, error="Fail",
-
-                    message="Unknown person or invalid number.",
-
-                    speak=f"{recipient} was not found in my directory. Can you share your number?",
-
-                    next_action="REQUEST_CONTACT_NUMBER",
-
-                    data={"unknown_name": recipient}
-
+                    success=False, verified=False, error="InvalidNumber",
+                    message=f"Invalid phone number for '{recipient}': '{phone_number}'",
+                    speak=f"Sir, the phone number for '{recipient}' appears to be invalid.",
                 )
 
 
@@ -346,137 +336,70 @@ class WhatsAppTool(BaseTool):
 
 
 
-    def _resolve_phone_number(self, recipient: str) -> str:
+    @staticmethod
+    def _normalize_turkish(text: str) -> str:
+        """[V16.6] Türkçe karakter duyarsız normalizasyon.
+        İ→i, I→ı, Ş→ş, Ğ→ğ, Ü→ü, Ö→ö, Ç→ç dönüşümü yaparak
+        casefold ile eşleştirme hatalarını önler."""
+        tr_map = str.maketrans("İIŞĞÜÖÇ", "iışğüöç")
+        return text.translate(tr_map).casefold()
 
-        """Decodes number from contacts.json."""
+    def _resolve_phone_number(self, recipient: str) -> str | None:
+        """[V16.6] 4 katmanlı kurşun geçirmez rehber eşleştirici.
 
-        import json
-
-        import os
-
-
-
-        # If the recipient is already a number (starts with +), return directly
-
-        if recipient.startswith("+") or (recipient.isdigit() and len(recipient) > 9):
-
-            return recipient
-
-
-
-        contacts_path = os.path.join(os.getcwd(), "contacts.json")
-
-        if not os.path.exists(contacts_path):
-
-            return recipient
-
-
-
-        try:
-
-            with open(contacts_path, "r", encoding="utf-8") as f:
-
-                contacts = json.load(f)
-
-                for name, num in contacts.items():
-
-                    if recipient.lower() in name.lower():
-
-                        return num
-
-        except Exception as e:
-
-            logger.warning(f"Directory reading error: {e}")
-
-            
-
-        return recipient
-
-        """Returns number by name from contacts.json.
-
-
-
-        This method is called in SYNCHRONOUS — run_in_executor.
-
-        If it is not found in the directory, it returns the recipient value as is.
-
-        (number may have been entered directly).
-
-
-
-        Args:
-
-            recipient: Contact name ("My Sister") or phone number ("+905551234567")
-
-
+        Katman 1: Doğrudan numara kontrolü (+90... veya saf rakam)
+        Katman 2: Tırnak/noktalama temizliği
+        Katman 3: Türkçe-duyarsız tam eşleşme (exact match)
+        Katman 4: Türkçe-duyarsız parça eşleşme (substring match)
 
         Returns:
+            str: Bulunan telefon numarası
+            None: Rehberde bulunamadı ve geçerli numara da değil"""
+        import json
+        import os
 
-            Parsed phone number string"""
+        # ── Katman 1: Doğrudan numara kontrolü ──
+        stripped = recipient.strip()
+        if stripped.startswith("+") or (stripped.isdigit() and len(stripped) > 9):
+            return stripped
 
-        contacts_path = os.path.abspath("contacts.json")
+        # ── Katman 2: LLM'den gelen tırnak/noktalama artıklarını temizle ──
+        clean_name = stripped.strip('"\'\'\".,;:!? ')
+        if not clean_name:
+            return None
 
-
-
+        # ── Rehber dosyasını oku ──
+        contacts_path = os.path.join(os.getcwd(), "contacts.json")
         if not os.path.exists(contacts_path):
-
-            logger.debug(
-
-                f"[WhatsApp] contacts.json not found: {contacts_path} —"
-
-                f"'{recipient}' is used as a number."
-
-            )
-
-            return recipient
-
-
+            logger.warning(f"[WhatsApp] contacts.json bulunamadı: {contacts_path}")
+            return None
 
         try:
-
             with open(contacts_path, "r", encoding="utf-8") as f:
-
-                contacts: dict = json.load(f)
-
-
-
-            # Try exact match first (case insensitive)
-
-            recipient_lower = recipient.lower()
-
-            for name, number in contacts.items():
-
-                if name.lower() == recipient_lower:
-
-                    logger.debug(f"[WhatsApp] Exact match: '{recipient}' → '{number}'")
-
-                    return str(number)
-
-
-
-            # Partial match (ex: "my sister" → "Big Sister")
-
-            for name, number in contacts.items():
-
-                if recipient_lower in name.lower() or name.lower() in recipient_lower:
-
-                    logger.debug(f"[WhatsApp] Partial match: '{recipient}' → '{name}' → '{number}'")
-
-                    return str(number)
-
-
-
+                contacts = json.load(f)
         except (json.JSONDecodeError, OSError) as e:
+            logger.warning(f"[WhatsApp] contacts.json okunamadı: {e!r}")
+            return None
 
-            logger.warning(f"[WhatsApp] Failed to read contacts.json: {e!r}")
+        # Türkçe-duyarsız normalize edilmiş isim
+        norm_input = self._normalize_turkish(clean_name)
 
+        # ── Katman 3: Tam eşleşme (exact match) ──
+        for name, number in contacts.items():
+            if self._normalize_turkish(name) == norm_input:
+                logger.info(f"[WhatsApp] Exact match: '{clean_name}' → '{name}' → '{number}'")
+                return str(number)
 
+        # ── Katman 4: Parça eşleşme (substring match) ──
+        for name, number in contacts.items():
+            norm_name = self._normalize_turkish(name)
+            if norm_input in norm_name or norm_name in norm_input:
+                logger.info(f"[WhatsApp] Substring match: '{clean_name}' → '{name}' → '{number}'")
+                return str(number)
 
-        # Not found in the directory → count the entered value as a number
-
-        logger.debug(f"[WhatsApp] Not found in contacts: '{recipient}' — used as a number.")
-
-        return recipient
+        # ── Bulunamadı ──
+        logger.warning(f"[WhatsApp] '{clean_name}' rehberde (contacts.json) bulunamadı.")
+        return None
 
 
 
@@ -1874,9 +1797,11 @@ class LLMEvalTool(BaseTool):
 
     async def execute(self, params: dict, engine_context: dict = None) -> ToolResult:
 
-        question = params.get("question", "") or params.get("query", "")
-
-        if isinstance(params, str): question = params
+        # Bug #1 fix: isinstance kontrolü .get() çağrısından önce olmalı
+        if isinstance(params, str):
+            question = params
+        else:
+            question = params.get("question", "") or params.get("query", "")
 
         
 
@@ -1984,11 +1909,11 @@ class YouTubeStrategyTool(BaseTool):
 
     async def execute(self, params: dict, engine_context: dict = None) -> ToolResult:
 
-        request = params.get("request", "") or params.get("query", "")
-
+        # Bug #1 fix: isinstance kontrolü .get() çağrısından önce olmalı
         if isinstance(params, str):
-
             request = params
+        else:
+            request = params.get("request", "") or params.get("query", "")
 
             
 

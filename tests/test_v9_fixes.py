@@ -22,14 +22,13 @@ def test_contact_manager_unknown_profile():
 async def test_whatsapp_tool_unknown_contact():
     tool = WhatsAppTool()
     
-    # Mock resolve_phone_number
-    tool._resolve_phone_number = lambda recipient: recipient
+    # [V16.6] Yeni davranış: rehberde bulunamazsa None döner
+    tool._resolve_phone_number = lambda recipient: None
     
     result = await tool.execute({"target": "Invisible Man|hi"})
     assert result.success is False
-    assert result.next_action == "REQUEST_CONTACT_NUMBER"
-    assert "unknown_name" in result.data
-    assert result.data["unknown_name"] == "Invisible Man"
+    assert result.error == "ContactNotFound"
+    assert "Invisible Man" in result.message
 
 def test_memory_consolidator_clean():
     class DummyCollection:

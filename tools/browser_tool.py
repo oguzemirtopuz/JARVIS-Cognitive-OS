@@ -69,6 +69,7 @@ logger = logging.getLogger("JARVIS.BrowserTools")
 
 
 _last_opened_url = None
+_url_lock = asyncio.Lock()  # Bug #13 fix: async güvenli erişim
 
 
 

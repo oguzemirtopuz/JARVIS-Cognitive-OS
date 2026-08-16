@@ -178,7 +178,7 @@ class ContactManager:
 
             phone = contacts.get(name, "")
 
-        except: phone = ""
+        except Exception: phone = ""
 
         return self._default_profile(name, phone)
 
@@ -208,4 +208,4 @@ class ContactManager:
 
             return result.get("ids", [])
 
-        except: return []
+        except Exception: return []

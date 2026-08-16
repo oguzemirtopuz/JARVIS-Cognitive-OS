@@ -21,7 +21,7 @@ class JarvisVision:
                 import pygetwindow as gw
                 win = gw.getActiveWindow()
                 if win: active_window = win.title
-            except:
+            except Exception:
                 pass
 
             # 2. Read On Screen (OCR)

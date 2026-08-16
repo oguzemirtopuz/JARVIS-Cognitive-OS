@@ -198,6 +198,9 @@ class PlanExecutor:
 
     async def execute_single(self, task_state, response: str) -> None:
         """Executes all protocol tags in the response in order."""
+        # [V16.6] Reasoning model <think> bloklarını temizle
+        response = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL).strip()
+
         # [PROTOL LEAK PROTECTION - ULTRA SECURE]
         # The answer is only the official J.A.R.V.I.S. If the protocol starts with [PROTOCOL: or [PLAN], it is executed.
         # Otherwise this is strictly speaking. All leak tags inside are cleared and voiced directly.
@@ -218,6 +221,12 @@ class PlanExecutor:
         for i, match in enumerate(matches):
             tag = match.group(1).upper()
             arg = match.group(2).strip()
+            # [V16.7] LLM markdown/tırnak artıklarını temizle
+            # Örn: **Spotify** → Spotify, "mesaj" → mesaj, `kod` → kod
+            arg = re.sub(r'\*\*(.+?)\*\*', r'\1', arg)   # **bold**
+            arg = re.sub(r'__(.+?)__', r'\1', arg)       # __underline__
+            arg = re.sub(r'`(.+?)`', r'\1', arg)         # `code`
+            arg = arg.strip('"\'""''')                    # Tırnak artıkları
             node = PlanNode(step_number=i+1, protocol_tag=tag, argument=arg)
             success = await self.execute_node(task_state, node)
             if not success:
@@ -427,7 +436,7 @@ class PlanExecutor:
         try:
             new_response = await self.brain.think(replan_prompt)
             return parse_plan(new_response)
-        except: return None
+        except Exception: return None
 
     async def detect_and_parse_plan(self, response: str, user_input: str) -> Optional[ExecutionPlan]:
         if "PLAN" in response.upper() or "```json" in response:
