@@ -1797,7 +1797,7 @@ class LLMEvalTool(BaseTool):
 
     async def execute(self, params: dict, engine_context: dict = None) -> ToolResult:
 
-        # Bug #1 fix: isinstance kontrolü .get() çağrısından önce olmalı
+        # Bug #1 fix: Ensure type validation occurs prior to dictionary key accesses
         if isinstance(params, str):
             question = params
         else:
@@ -1909,7 +1909,7 @@ class YouTubeStrategyTool(BaseTool):
 
     async def execute(self, params: dict, engine_context: dict = None) -> ToolResult:
 
-        # Bug #1 fix: isinstance kontrolü .get() çağrısından önce olmalı
+        # Bug #1 fix: Ensure type validation occurs prior to dictionary key accesses
         if isinstance(params, str):
             request = params
         else:

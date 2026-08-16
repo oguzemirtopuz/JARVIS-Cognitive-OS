@@ -8,8 +8,8 @@ import logging
 
 # [V15.5] Translation cache — same sentence is translated once, instant return on subsequent calls
 _TRANSLATION_CACHE: dict = {}
-_MAX_CACHE_SIZE = 500  # Bug #7 fix: Cache boyut sınırı
-_tts_lock = threading.Lock()  # Bug #4 fix: Eşzamanlı ses çalma koruması
+_MAX_CACHE_SIZE = 500  # Bug #7 fix: Cache size limit
+_tts_lock = threading.Lock()  # Bug #4 fix: Mutual exclusion for concurrent audio playback
 
 class TextToSpeech:
     def __init__(self):
@@ -25,13 +25,13 @@ class TextToSpeech:
         thread.start()
         
     def _play_audio(self, text: str, voice: str):
-        # Bug #4 fix: Aynı anda tek bir ses çalmasını garanti et
+        # Bug #4 fix: Guarantee single audio stream playback at a time
         with _tts_lock:
             self._play_audio_inner(text, voice)
 
     def _play_audio_inner(self, text: str, voice: str):
         temp_path = None
-        _loaded = False  # Bug #4b fix: unload güvenliği
+        _loaded = False  # Bug #4b fix: Safe unload guard
         try:
             # Default rate and pitch for RyanNeural (charismatic)
             rate = "+0%"
@@ -76,7 +76,7 @@ class TextToSpeech:
                         translated = await loop.run_in_executor(None, _do_translate)
                         if translated:
                             _TRANSLATION_CACHE[text] = translated
-                            # Bug #7 fix: Cache boyutunu kontrol et
+                            # Bug #7 fix: Enforce cache size boundary (evict oldest half)
                             if len(_TRANSLATION_CACHE) > _MAX_CACHE_SIZE:
                                 keys = list(_TRANSLATION_CACHE.keys())
                                 for k in keys[:len(keys)//2]:
@@ -120,7 +120,7 @@ class TextToSpeech:
             # Play the generated file with Pygame
             if os.path.exists(temp_path) and os.path.getsize(temp_path) > 0:
                 pygame.mixer.music.load(temp_path)
-                _loaded = True  # Bug #4b: load başarılı
+                _loaded = True  # Bug #4b: load succeeded
                 pygame.mixer.music.play()
             else:
                 raise Exception("Audio file could not be created.")
@@ -133,13 +133,13 @@ class TextToSpeech:
             return
             
         finally:
-            # Bug #4b fix: Sadece load() başarılıysa unload() çağır
+            # Bug #4b fix: Only invoke unload() if load() actually succeeded
             if _loaded:
                 pygame.mixer.music.unload()
             # Clean up temp files
             if temp_path and os.path.exists(temp_path):
                 try:
                     os.remove(temp_path)
-                except Exception:  # Bug #12 fix: bare except düzeltildi
+                except Exception:  # Bug #12 fix: Cleaned bare except
                     pass
 
