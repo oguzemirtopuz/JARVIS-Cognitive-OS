@@ -87,7 +87,7 @@ class AutonomousCognitionLoop:
             cycle_start = time.time()
             self._cycles_count += 1
 
-            # Bug #2 fix: exception durumunda telemetri için varsayılan değer
+            # Bug #2 fix: Deterministic fallback structure for telemetry reporting upon exceptions
             situation = {}
             try:
                 # ═══════════════════════════════════════════

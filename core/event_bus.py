@@ -30,7 +30,7 @@ class EventBus:
     """
     def __init__(self):
         self._subscribers: Dict[str, List[Callable]] = {}
-        # Bug #11 fix: list yerine deque — pop(0) O(1) olur
+        # Bug #11 fix: Use collections.deque for O(1) history pop operations
         self._history: deque = deque(maxlen=100)
 
     def subscribe(self, event_name: str, callback: Callable):
@@ -42,7 +42,7 @@ class EventBus:
     def publish(self, event_name: str, data: Any, sender: str = "system"):
         """Alias for emit used by validation tests."""
         event = JarvisEvent(name=event_name, data=data, sender=sender)
-        self._history.append(event)  # deque maxlen otomatik kırpar
+        self._history.append(event)  # deque maxlen automatically bounds history
 
         loop = None
         try:
@@ -58,7 +58,7 @@ class EventBus:
                     try: callback(event)
                     except Exception as e: logger.error(f"Sync callback error: {e}")
 
-        # Bug #5 fix: Wildcard çift tetiklemeyi önle
+        # Bug #5 fix: Prevent wildcard duplicate execution on emit("*")
         if "*" in self._subscribers and event_name != "*":
             for callback in self._subscribers["*"]:
                 if asyncio.iscoroutinefunction(callback):
@@ -69,7 +69,7 @@ class EventBus:
 
     async def emit(self, event_name: str, data: Any, sender: str = "system"):
         event = JarvisEvent(name=event_name, data=data, sender=sender)
-        self._history.append(event)  # deque maxlen otomatik kırpar
+        self._history.append(event)  # deque maxlen automatically bounds history
 
         logger.info(f"Event: {event_name} from {sender}")
         
@@ -85,15 +85,15 @@ class EventBus:
             
             if tasks:
                 try:
-                    # Bug #6 fix: gather sonuçlarını kontrol et
+                    # Bug #6 fix: Inspect gather results and log subscriber exceptions
                     results = await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=5.0)
                     for r in results:
                         if isinstance(r, Exception):
-                            logger.error(f"EventBus subscriber hatası '{event_name}': {r}")
+                            logger.error(f"EventBus subscriber error on '{event_name}': {r}")
                 except asyncio.TimeoutError:
-                    logger.error(f"EventBus Timeout: {event_name} dinleyicilerinden biri dondu!")
+                    logger.error(f"EventBus Timeout: A subscriber to '{event_name}' timed out!")
         
-        # Bug #5 fix: Wildcard çift tetiklemeyi önle
+        # Bug #5 fix: Prevent wildcard duplicate execution on emit("*")
         if "*" in self._subscribers and event_name != "*":
             tasks = []
             for callback in self._subscribers["*"]:
@@ -105,13 +105,13 @@ class EventBus:
                     tasks.append(loop.run_in_executor(None, callback, event))
             if tasks:
                 try:
-                    # Bug #6 fix: gather sonuçlarını kontrol et
+                    # Bug #6 fix: Inspect gather results and log subscriber exceptions
                     results = await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=5.0)
                     for r in results:
                         if isinstance(r, Exception):
-                            logger.error(f"EventBus wildcard subscriber hatası '{event_name}': {r}")
+                            logger.error(f"EventBus wildcard subscriber error on '{event_name}': {r}")
                 except asyncio.TimeoutError:
-                    logger.error("EventBus Timeout: Wildcard (*) dinleyicilerinden biri dondu!")
+                    logger.error("EventBus Timeout: Wildcard (*) subscriber timed out!")
 
     def get_history(self, limit: int = 10) -> List[JarvisEvent]:
         return self._history[-limit:]

@@ -306,7 +306,7 @@ class AdaptiveLearner:
         text = text.strip().lower()
         # Skip multiple spaces
         text = re.sub(r'\s+', ' ', text)
-        # Bug #3 fix: Türkçe noktasız ı eklendi, yanlış y kaldırıldı
+        # Bug #3 fix: Added Turkish dotless ı, removed invalid character y
         text = re.sub(r"'?[ıiuü]$", "", text)  # "chrome'u" → "chrome"
         text = re.sub(r"'?[ıiuü]n[ıiuü]$", "", text)  # "chrome'unu" → "chrome"
         return text.strip()
