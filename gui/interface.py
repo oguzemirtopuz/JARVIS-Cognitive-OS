@@ -119,6 +119,9 @@ LANG = {
         "text_mode":          "⌨ TEXT MODE",
         "voice_mode":         "🎙 VOICE MODE",
         "listening":          "LISTENING",
+        "recording":          "RECORDING...",
+        "transcribing":       "TRANSCRIBING...",
+        "thinking":           "THINKING...",
         "processing":         "PROCESSING",
         "working":            "WORKING",
         "awaiting_cmd":       "AWAITING CMD",
@@ -187,6 +190,9 @@ LANG = {
         "text_mode":          "⌨ YAZILI MOD",
         "voice_mode":         "🎙 SESLİ MOD",
         "listening":          "DİNLİYOR",
+        "recording":          "SES ALINIYOR...",
+        "transcribing":       "SES ÇÖZÜLÜYOR...",
+        "thinking":           "DÜŞÜNÜYOR...",
         "processing":         "İŞLENİYOR",
         "working":            "ÇALIŞIYOR",
         "awaiting_cmd":       "KOMUT BEKLENİYOR",
@@ -1429,9 +1435,12 @@ class JarvisInterface:
 
     def _get_status_info(self):
         s = self._status.upper()
-        if "LISTENING" in s or "DİNLİYOR" in s:   return self._t("listening"),     GREEN_OK
-        if any(x in s for x in ["THINKING", "PROCESSING", "WORKING", "İŞLENİYOR", "ÇALIŞIYOR"]):
-            return self._t("processing"), ORANGE
+        if "RECORD" in s: return self._t("recording"), "#FF6B35"
+        if "TRANSCRIB" in s: return self._t("transcribing"), "#FFD700"
+        if "THINK" in s: return self._t("thinking"), "#A855F7"
+        if "LISTENING" in s or "DİNLİYOR" in s:   return self._t("listening"),     "#00C8FF"
+        if any(x in s for x in ["PROCESSING", "WORKING", "İŞLENİYOR", "ÇALIŞIYOR"]):
+            return self._t("processing"), "#A855F7"
         if any(x in s for x in ["SPEAKING", "DICTATION"]):   return self._t("working"),   ACCENT_BLUE
         if "STARTING" in s or "BAŞLANIYOR" in s: return self._t("starting"), TEXT_DIM
         if any(x in s for x in ["WRITTEN", "TEXT", "KOMUT BEKLENİYOR", "YAZILI"]):   return self._t("awaiting_cmd"), ORANGE
@@ -1827,7 +1836,22 @@ $s.Description     = "J.A.R.V.I.S. AI Assistant"
         if display_text == status_key:
             display_text = status
             
-        self.root.after(0, lambda: self.status_lbl.configure(text=f"● {display_text}"))
+        # Determine status indicator color
+        status_upper = status.upper()
+        if "RECORD" in status_upper:
+            fg_color = "#FF6B35"  # Orange/Amber
+        elif "TRANSCRIB" in status_upper:
+            fg_color = "#FFD700"  # Gold/Yellow
+        elif "THINK" in status_upper or "PROCESS" in status_upper:
+            fg_color = "#A855F7"  # Purple/Cyan
+        elif "LISTEN" in status_upper:
+            fg_color = "#00C8FF"  # Cyan/Blue
+        elif "READY" in status_upper:
+            fg_color = "#00E87A"  # Green
+        else:
+            fg_color = ACCENT_BLUE
+
+        self.root.after(0, lambda: self.status_lbl.configure(text=f"● {display_text}", fg=fg_color))
         if "FOCUS" in status:
             self.bring_to_front()
         if status.upper() in ("KAPATILIYOR", "SHUTTING DOWN", "CLOSING"):

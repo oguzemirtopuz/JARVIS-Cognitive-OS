@@ -258,7 +258,16 @@ class IOBridge:
                 return ""
 
         if self._stt_func:
-            return await loop.run_in_executor(None, self._stt_func)
+            def _stt_with_callbacks():
+                try:
+                    return self._stt_func(
+                        on_speech_end=lambda: self.update_gui("TRANSCRIBING"),
+                        on_status=self.update_gui
+                    )
+                except TypeError:
+                    return self._stt_func()
+
+            return await loop.run_in_executor(None, _stt_with_callbacks)
 
         return await loop.run_in_executor(None, input, ">>> ")
 

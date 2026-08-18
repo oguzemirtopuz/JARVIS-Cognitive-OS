@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v16.8.0] - 2026-08-18
+### Added
+- **[Audio/SoundEffects] Zero-Dependency Asynchronous Cues:** Introduced `audio/sound_effects.py` to synthesize in-memory futuristic dual-tone audio cues (880Hz → 1320Hz) upon speech completion.
+- **[GUI/HUD] Real-Time Voice States:** Integrated dynamic circular radar states (`LISTENING`, `TRANSCRIBING`, `THINKING`) mapping to Cyan, Gold, and Purple color codes respectively.
+
+### Changed
+- **[Audio/STT] Improved Acoustic Sensitivity:** Lowered the core `_MIN_RMS` threshold from 350 to 150 to ensure reliable capture of normal conversational volumes without requiring elevated speech levels.
+- **[Audio/STT] Optimized Speech Rhythm Tolerance:** Adjusted `pause_threshold` from 1.4s to 1.2s to prevent premature transcription cut-offs during natural pauses between words.
+- **[Audio/STT] Suppressed Log Clutter:** Disabled visual `print()` log outputs for Whisper hallucinations and silent background chunks, retaining them strictly in backend debug logs to maintain a clean HUD.
+- **[Core/Engine] Accurate Brain Telemetry:** Replaced the legacy `PROCESSING` state trigger with `THINKING` during primary LLM module routing for precise GUI synchronization.
+
+---
+
 ## [v16.7.1] - 2026-08-18
 ### Fixed
 - **[Audio/STT] Reasoning Tag Sanitization:** Added automatic `<think>...</think>` block stripping in Groq and Gemini transcription polishers (`_polish_with_groq`, `_polish_with_gemini`), preventing internal model monologues from polluting voice command inputs.

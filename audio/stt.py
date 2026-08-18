@@ -24,6 +24,11 @@ import re
 import logging
 from typing import Optional
 
+try:
+    from audio.sound_effects import play_speech_end_cue
+except Exception:
+    play_speech_end_cue = lambda: None
+
 logger = logging.getLogger("JARVIS.STT")
 
 # ── Groq SDK ──
@@ -392,8 +397,9 @@ class SpeechToText:
     # MAIN LISTENING ENGINE
     # ─────────────────────────────────────────────────────────────────────────
 
-    def _do_listen(self, pause_threshold: float, phrase_time_limit: int,
-                   timeout: int = None, on_speech_end=None, use_polisher: bool = True) -> str:
+    def _do_listen(self, pause_threshold: float = 1.4, phrase_time_limit: int = 20,
+                   timeout: int = None, on_speech_end=None, use_polisher: bool = True,
+                   on_status=None) -> str:
         """
         Internal listening engine — Typeless Grade (V13.1)
 
@@ -425,9 +431,24 @@ class SpeechToText:
                     phrase_time_limit=phrase_time_limit
                 )
 
-                # Recording done — give immediate feedback
+                # ── [V13.2] RMS Energy Check — Don't send silent audio to API ──
+                audio_rms = _calculate_audio_rms(audio)
+                logger.debug(f"[RMS] Audio level: {audio_rms:.0f}")
+                
+                # Daha hassas dinleme için eşik 350'den 150'ye düşürüldü (bağırmaya gerek kalmayacak)
+                _MIN_RMS = 150
+                if audio_rms < _MIN_RMS:
+                    logger.debug(f"[RMS_SHIELD] Audio too low ({audio_rms:.0f} < {_MIN_RMS}), skipping.")
+                    if on_status:
+                        on_status("LISTENING")
+                    return None
+
+                # Recording done AND audio passed RMS check — play futuristic audio cue and notify GUI
+                play_speech_end_cue()
                 if on_speech_end:
                     on_speech_end()
+                if on_status:
+                    on_status("TRANSCRIBING")
 
                 # Restore pause_threshold to previous value
                 self.recognizer.pause_threshold = old_pause
@@ -435,18 +456,8 @@ class SpeechToText:
                 # [V13.1 FIX] If muted during listening (switched to text mode),
                 # discard audio immediately.
                 if self._muted:
-                    return None
-
-                # ── [V13.2] RMS Energy Check — Don't send silent audio to API ──
-                audio_rms = _calculate_audio_rms(audio)
-                logger.debug(f"[RMS] Audio level: {audio_rms:.0f}")
-                
-                # RMS < 350 → microphone is open but nobody is speaking
-                # This threshold catches silence in most environments.
-                # Can be adjusted via self.min_rms_threshold if needed.
-                _MIN_RMS = 350
-                if audio_rms < _MIN_RMS:
-                    logger.debug(f"[RMS_SHIELD] Audio too low ({audio_rms:.0f} < {_MIN_RMS}), skipping.")
+                    if on_status:
+                        on_status("TEXT MODE")
                     return None
 
                 # ── Transcription Pipeline ──
@@ -470,14 +481,18 @@ class SpeechToText:
 
                 # ── [V13.2] Whisper Hallucination Shield ──
                 if _is_whisper_hallucination(raw_text):
-                    print(f"[HALLUCINATION_SHIELD] Whisper ghost text rejected: '{raw_text}'")
+                    logger.debug(f"[HALLUCINATION_SHIELD] Whisper ghost text rejected: '{raw_text}'")
+                    if on_status:
+                        on_status("LISTENING")
                     return None
 
                 # ── Noise Shield: Consists only of noise? ──
                 clean_check = raw_text.lower().strip()
                 noise_only = ["ıı", "öö", "ee", "ııı", "ööö", "eee", "hıh", "ehm", "hım"]
                 if clean_check in noise_only or len(clean_check) < 2:
-                    print(f"[NOISE_SHIELD] Unnecessary input rejected: '{raw_text}'")
+                    print(f"[STT] Gereksiz ses/fısıltı filtresine takıldı: '{raw_text}'")
+                    if on_status:
+                        on_status("LISTENING")
                     return None
 
                 # ── AI Polisher (Typeless Mode) ──
@@ -500,6 +515,7 @@ class SpeechToText:
                 return final_text
 
         except (sr.UnknownValueError, sr.WaitTimeoutError):
+            print("[STT] Cümle algılanamadı, dinlemeye devam ediliyor...")
             return None
         except Exception as e:
             print(f"[STT_OMEGA]: {str(e)}")
@@ -514,7 +530,7 @@ class SpeechToText:
         self.recognizer = sr.Recognizer()
         self.recognizer.dynamic_energy_threshold = True
         self.recognizer.energy_threshold = 4000
-        self.recognizer.pause_threshold = 1.4
+        self.recognizer.pause_threshold = 1.2
         self.recognizer.phrase_threshold = 0.4
         self.recognizer.non_speaking_duration = 0.6
 
@@ -532,7 +548,7 @@ class SpeechToText:
             Polisher          = Skipped for short commands, activated for longer ones
         """
         return self._do_listen(
-            pause_threshold=1.4,
+            pause_threshold=1.2,
             phrase_time_limit=20,
             timeout=timeout,
             on_speech_end=on_speech_end,

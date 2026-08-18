@@ -305,7 +305,7 @@ class ExecutionEngine:
 
         try:
             await self.io_bridge.speak("Understood, Sir.")
-            self.io_bridge.update_gui("PROCESSING")
+            self.io_bridge.update_gui("THINKING")
 
             # ════════════════════════════════════════════════════════
             #  PHASE 0: ADAPTIVE LEARNING PRE-CHECK
