@@ -20,6 +20,7 @@ import array
 import struct
 import os
 import io
+import re
 import logging
 from typing import Optional
 
@@ -79,12 +80,15 @@ def _polish_with_groq(raw_text: str, api_key: str) -> Optional[str]:
             max_tokens=1024,
         )
         polished = response.choices[0].message.content.strip()
+        # [V16.7.1] Clean reasoning model <think>...</think> tags (Qwen, DeepSeek etc.)
+        polished = re.sub(r'<think>.*?</think>', '', polished, flags=re.DOTALL).strip()
+        polished = re.sub(r'^.*?<think>.*$', '', polished, flags=re.DOTALL).strip() if '<think>' in polished else polished
         # LLM sometimes wraps in quotes, clean up
         if polished.startswith('"') and polished.endswith('"'):
             polished = polished[1:-1]
         if polished.startswith("'") and polished.endswith("'"):
             polished = polished[1:-1]
-        return polished
+        return polished.strip()
     except Exception as e:
         logger.warning(f"[AI_POLISHER] Groq LLM polishing error: {e}")
         return None
@@ -104,11 +108,13 @@ def _polish_with_gemini(raw_text: str, api_key: str) -> Optional[str]:
             )
         )
         polished = response.text.strip()
+        # [V16.7.1] Clean reasoning model <think>...</think> tags
+        polished = re.sub(r'<think>.*?</think>', '', polished, flags=re.DOTALL).strip()
         if polished.startswith('"') and polished.endswith('"'):
             polished = polished[1:-1]
         if polished.startswith("'") and polished.endswith("'"):
             polished = polished[1:-1]
-        return polished
+        return polished.strip()
     except Exception as e:
         logger.warning(f"[AI_POLISHER] Gemini polishing error: {e}")
         return None

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v16.7.1] - 2026-08-18
+### Fixed
+- **[Audio/STT] Reasoning Tag Sanitization:** Added automatic `<think>...</think>` block stripping in Groq and Gemini transcription polishers (`_polish_with_groq`, `_polish_with_gemini`), preventing internal model monologues from polluting voice command inputs.
+
+---
+
 ## [v16.7.0] - 2026-08-16
 ### Fixed
 - **[System/Tools] Parameter Parsing Order (`BUG #1`):** Fixed a critical `AttributeError` in `LLMEvalTool` and `YouTubeStrategyTool` where `.get()` was invoked before `isinstance(params, str)` type checking.
