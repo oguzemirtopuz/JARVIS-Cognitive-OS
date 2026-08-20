@@ -73,9 +73,12 @@ async def test_engine_replan_success(base_engine):
 @pytest.mark.asyncio
 async def test_engine_detect_plan_fallback(base_engine):
     # [V8.1] Moved to plan_executor
-    plan = await base_engine.plan_executor.detect_and_parse_plan("[PLAN] 1. TEST t [/PLAN]", "t")
+    # Only registered protocols become steps; 'TEST' was never one.
+    plan = await base_engine.plan_executor.detect_and_parse_plan(
+        "[PLAN] 1. GOOGLE_SEARCH t [/PLAN]", "t"
+    )
     assert plan is not None
-    assert plan.steps[0].protocol_tag == "TEST"
+    assert plan.steps[0].protocol_tag == "GOOGLE_SEARCH"
 
 @pytest.mark.asyncio
 async def test_handle_stress_test(base_engine):

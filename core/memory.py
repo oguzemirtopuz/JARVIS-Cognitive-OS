@@ -149,8 +149,13 @@ class MemoryManager:
             if self._on_save_callback:
                 try:
                     self._on_save_callback(text, memory_type, metadata["importance"])
-                except Exception:
-                    pass
+                except Exception as e:
+                    # The record is already committed, so a failing notification
+                    # must not fail the save — but it must not vanish either:
+                    # silently losing it makes the user think nothing was learned.
+                    self.logger.warning(
+                        f"[MEMORY SAVE] 'I learned' notification failed: {e}"
+                    )
 
             return doc_id
 

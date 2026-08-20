@@ -187,7 +187,16 @@ class Executor:
             duration_ms = int((time.monotonic() - start_time) * 1000)
             result.execution_time_ms = duration_ms
             
+            # Unverified success is not success: a tool must observe its own
+            # effect before claiming one ("unreal success" guard). Downgrading
+            # silently used to hide tools that simply forgot the flag, so the
+            # claim-vs-proof mismatch is logged rather than swallowed.
             if not result.verified:
+                if result.success:
+                    logger.warning(
+                        f"Unverified success downgraded: {tool.name} "
+                        f"(tag={protocol_tag}) reported success without verified=True"
+                    )
                 result.success = False
 
         except asyncio.TimeoutError:

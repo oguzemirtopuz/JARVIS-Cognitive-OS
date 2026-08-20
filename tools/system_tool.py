@@ -1090,6 +1090,7 @@ class ScheduleTool(BaseTool):
         return ToolResult(
 
             success=True,
+            verified=True,
 
             message=f"Reminder set: {minutes} minutes later ({target.strftime('%H:%M')})",
 
@@ -1574,6 +1575,7 @@ class SystemPowerTool(BaseTool):
             return ToolResult(
 
                 success=True,
+                verified=True,
 
                 message=f"System {action} command implemented.",
 
@@ -1738,6 +1740,7 @@ class ShutdownTool(BaseTool):
             return ToolResult(
 
                 success=True,
+                verified=True,
 
                 message="io_bridge not found — event loop stopped.",
 
@@ -1760,6 +1763,7 @@ class ShutdownTool(BaseTool):
         return ToolResult(
 
             success=True,
+            verified=True,
 
             message="System shutdown protocol initiated.",
 
@@ -1809,68 +1813,53 @@ class LLMEvalTool(BaseTool):
 
         brain = ctx.get("brain")
 
-        step_data = ctx.get("step_results", {})
+        step_data = ctx.get("step_results", {}) or {}
 
-        
-
-        if not brain:
-
-            return ToolResult(success=False, verified=False, error="NoBrain", message="There is no brain module.")
-
-            
-
-        prompt = (
-
-            "You are an analytical engine. Read the 'Data Collected' below carefully."
-
-            "Answer/calculate the user's question EXACTLY and CLEARLY based on this data."
-
-            "ATTENTION: If the question contains more than one piece of data (e.g. If any data is missing, don't guess, just say 'Data is missing'.\n\n"
-
-            f"Toplanan Veriler:\n{step_data}\n\n"
-
-            f"Soru: {question}"
-
+        source_tags = {"WEB_SEARCH", "GOOGLE_SEARCH", "FILE_READ", "VISION", "YT_SEARCH"}
+        has_source = any(
+            str(k).upper() in source_tags and str(v).strip()
+            for k, v in step_data.items()
         )
-
-        
 
         print(f"\n[BRAIN LOG] Data to LLM_EVAL:\n{step_data}\n")
 
-        
+        if not brain:
+            return ToolResult(success=False, verified=False, error="NoBrain", message="There is no brain module.")
 
-        try:
-
-            response = await brain.client.chat.completions.create(
-
-                model=brain.model,
-
-                messages=[{"role": "user", "content": prompt}],
-
-                temperature=0.1,
-
-                max_tokens=256
-
+        if not has_source:
+            return ToolResult(
+                success=False,
+                verified=False,
+                error="NoCollectedData",
+                message="Data is missing",
+                speak="Sir, I have no collected data to evaluate yet.",
             )
 
-            answer = response.choices[0].message.content.strip()
+        prompt = (
+            "You are an analytical engine. Read the 'Data Collected' below carefully."
+            "Answer/calculate the user's question EXACTLY and CLEARLY based on this data."
+            "ATTENTION: If the question contains more than one piece of data (e.g. If any data is missing, don't guess, just say 'Data is missing'.\n\n"
+            f"Toplanan Veriler:\n{step_data}\n\n"
+            f"Soru: {question}"
+        )
 
+        try:
+            response = await brain.client.chat.completions.create(
+                model=brain.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                max_tokens=getattr(getattr(brain, "config", None), "max_tokens", 2048) or 2048,
+            )
+            from core.reasoning import strip_reasoning
             import re
-
+            answer = strip_reasoning(response.choices[0].message.content or "")
             answer = re.sub(r'\[PROTOCOL:.*?\]', '', answer).strip()
 
-            
-
             return ToolResult(
-
-                success=True, 
-
-                verified=True, 
-
-                message=f"Evaluation result: {answer}", 
-
-                speak=f"Sir, I analyzed the data. Result: {answer}"
-
+                success=True,
+                verified=True,
+                message=f"Evaluation result: {answer}",
+                speak=f"Sir, I analyzed the data. Result: {answer}",
             )
 
         except Exception as e:

@@ -2,6 +2,7 @@ import asyncio
 import logging
 import uuid
 from datetime import datetime
+from core.planner import contains_plan_block
 from core.user_settings import UserSettings
 
 logger = logging.getLogger("JARVIS.Watcher")
@@ -221,6 +222,10 @@ class ProactiveWatcher:
             plan = await self.engine.plan_executor.detect_and_parse_plan(response, watcher_prompt)
             if plan:
                 await self.engine.plan_executor.execute_plan(task_state, plan)
+            elif contains_plan_block(response):
+                # Same rule as the main path: an unparsable plan block is
+                # machine output and must not be read out to the user.
+                logger.warning(f"[WATCHER] Unparsable plan block dropped: {response[:200]!r}")
             else:
                 protocol_start = response.find("[PROTOCOL:")
                 if protocol_start >= 0:

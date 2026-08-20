@@ -192,22 +192,27 @@ class IOBridge:
             
         try:
             client = AsyncGroq(api_key=api_key)
+            models = getattr(self.config, "brain_models", None) if self.config else None
+            model = (models or ["qwen/qwen3.6-27b"])[0]
             response = await client.chat.completions.create(
-                model="openai/gpt-oss-20b",
+                model=model,
                 messages=[
                     {"role": "system", "content": "You are a professional translator. Translate the given English text to Turkish. Maintain the polite tone (like Efendim). Return ONLY the translated Turkish text, nothing else."},
                     {"role": "user", "content": clean_text}
                 ],
-                max_tokens=256,
+                max_tokens=1024,
                 temperature=0.1
             )
-            tr_text = response.choices[0].message.content.strip()
+            from core.reasoning import strip_reasoning
+            tr_text = strip_reasoning(response.choices[0].message.content or "")
             return tr_text if tr_text else text
         except Exception as e:
             logger.warning(f"Translation error: {e}")
             return text
 
     async def speak(self, text: str) -> None:
+        from core.reasoning import strip_reasoning
+        text = strip_reasoning(text)
         try:
             from core.user_settings import UserSettings
             lang = UserSettings().get("language", "en")

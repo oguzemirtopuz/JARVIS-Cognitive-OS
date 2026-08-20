@@ -17,7 +17,8 @@ from core.telemetry import telemetry
 from core.io_bridge import IOBridge
 from core.state_manager import TaskState, StateManager
 from core.task_queue import TaskQueue, TaskPriority
-from core.planner import parse_plan, ExecutionPlan
+from core.planner import parse_plan, contains_plan_block, ExecutionPlan
+from core.reasoning import strip_reasoning
 from core.executor import Executor
 from core.reflector import Reflector
 from core.brain import GroqBrain
@@ -49,6 +50,12 @@ class ExecutionEngine:
         self.reflector: Optional[Reflector] = None
         self.plan_executor: Optional["PlanExecutor"] = None
         self.cognitive_core: Optional[CognitiveCore] = None
+
+        # shutdown() is reachable both from the input loop and from the GUI
+        # close handler — the second caller must wait for the first to finish
+        # instead of skipping cleanup.
+        self._shutdown_lock: asyncio.Lock = asyncio.Lock()
+        self._shutdown_done: bool = False
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     #  IO BRIDGE PROXIES (GUI Compatibility)
@@ -242,37 +249,43 @@ class ExecutionEngine:
 
     async def shutdown(self) -> None:
         """It shuts down all subsystems cleanly."""
-        self._running = False
-        logger.info("Engine shutting down...")
+        async with self._shutdown_lock:
+            if self._shutdown_done:
+                return
 
-        # [V12.0] Cognition Loop durdur
-        if self.cognitive_core:
-            self.cognitive_core.stop_cognition_loop()
-            if self.cognitive_core.perception:
-                self.cognitive_core.perception.stop()
+            self._running = False
+            logger.info("Engine shutting down...")
 
-        # [V9.9] Stop Watcher
-        if hasattr(self, 'watcher'):
-            self.watcher.stop()
-            if hasattr(self, '_watcher_task') and not self._watcher_task.done():
-                self._watcher_task.cancel()
+            # [V12.0] Cognition Loop durdur
+            if self.cognitive_core:
+                self.cognitive_core.stop_cognition_loop()
+                if self.cognitive_core.perception:
+                    self.cognitive_core.perception.stop()
+
+            # [V9.9] Stop Watcher
+            if hasattr(self, 'watcher'):
+                self.watcher.stop()
+                if hasattr(self, '_watcher_task') and not self._watcher_task.done():
+                    self._watcher_task.cancel()
+                    try:
+                        await self._watcher_task
+                    except asyncio.CancelledError:
+                        pass
+
+            # [V9.0] Stop Scheduler
+            if hasattr(self, 'scheduler'):
+                self.scheduler.stop()
+            if hasattr(self, '_scheduler_task') and not self._scheduler_task.done():
+                self._scheduler_task.cancel()
                 try:
-                    await self._watcher_task
+                    await self._scheduler_task
                 except asyncio.CancelledError:
                     pass
+            if self.executor:
+                await self.executor.cleanup()
 
-        # [V9.0] Stop Scheduler
-        if hasattr(self, 'scheduler'):
-            self.scheduler.stop()
-        if hasattr(self, '_scheduler_task') and not self._scheduler_task.done():
-            self._scheduler_task.cancel()
-            try:
-                await self._scheduler_task
-            except asyncio.CancelledError:
-                pass
-        if self.executor:
-            await self.executor.cleanup()
-        logger.info("Engine V12.0 has been shut down.")
+            self._shutdown_done = True
+            logger.info("Engine V12.0 has been shut down.")
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     #  PROCESSING
@@ -458,26 +471,42 @@ class ExecutionEngine:
 
                 # [V9.5] Plan Leak Cleaner
                 response = self._sanitize_llm_output(response)
-
-                #2. Plan determination and execution
-                plan = await self.plan_executor.detect_and_parse_plan(response, user_input)
-
-                if plan:
-                    await self.plan_executor.execute_plan(task_state, plan)
+                response = strip_reasoning(response)
+                if not response:
+                    logger.warning("LLM reply was only truncated reasoning; nothing executable remains.")
+                    await self.io_bridge.speak(
+                        "Sir, I could not finish that thought. Please ask again."
+                    )
+                    self.state_manager.fail_task(task_id, "Truncated reasoning with no executable reply")
                 else:
-                    # [V9.8] Mixed Content Management
-                    protocol_start = response.find("[PROTOCOL:")
-                    if protocol_start > 0:
-                        preceding_text = response[:protocol_start].strip()
-                        if preceding_text:
-                            await self.io_bridge.speak(preceding_text)
-                        remaining_response = response[protocol_start:]
-                        await self.plan_executor.execute_single(task_state, remaining_response)
-                    elif protocol_start == 0:
-                        await self.plan_executor.execute_single(task_state, response)
+                    #2. Plan determination and execution
+                    plan = await self.plan_executor.detect_and_parse_plan(response, user_input)
+
+                    if plan:
+                        await self.plan_executor.execute_plan(task_state, plan)
+                    elif contains_plan_block(response):
+                        # A plan block that yields no executable step is machine
+                        # output, not an answer. Speaking it raw leaks [PLAN] tags
+                        # to the user and hides the parse failure from the logs.
+                        logger.warning(f"Unparsable plan block dropped: {response[:200]!r}")
+                        await self.io_bridge.speak(
+                            "Sir, I could not turn this into an executable plan."
+                        )
+                        self.state_manager.fail_task(task_id, "Unparsable plan block")
                     else:
-                        await self.io_bridge.speak(response)
-                        self.state_manager.complete_task(task_id)
+                        # [V9.8] Mixed Content Management
+                        protocol_start = response.find("[PROTOCOL:")
+                        if protocol_start > 0:
+                            preceding_text = response[:protocol_start].strip()
+                            if preceding_text:
+                                await self.io_bridge.speak(preceding_text)
+                            remaining_response = response[protocol_start:]
+                            await self.plan_executor.execute_single(task_state, remaining_response)
+                        elif protocol_start == 0:
+                            await self.plan_executor.execute_single(task_state, response)
+                        else:
+                            await self.io_bridge.speak(response)
+                            self.state_manager.complete_task(task_id)
 
             # ════════════════════════════════════════════════════════
             #  PHASE 3: COGNITIVE REFLECTION (Post-Execution)

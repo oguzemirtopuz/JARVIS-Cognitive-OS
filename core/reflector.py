@@ -206,10 +206,11 @@ class Reflector:
                 model="qwen/qwen3.6-27b",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.0,
-                max_tokens=150,
+                max_tokens=1024,
                 timeout=5.0,
             )
-            llm_response = llm_response_obj.choices[0].message.content.strip()
+            from core.reasoning import strip_reasoning
+            llm_response = strip_reasoning(llm_response_obj.choices[0].message.content or "")
 
             base_reflection["summary"] += f"\n[LLM INSIGHT]: {llm_response}"
             logger.info("LLM reflection has been added successfully.")

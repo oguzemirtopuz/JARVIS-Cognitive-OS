@@ -34,7 +34,10 @@ class GroqBrain:
         self.config = config
         self.memory_manager = memory_manager
         self.tool_registry = tool_registry
-        self._lock: asyncio.Lock = asyncio.Lock()  # [FIX] Eager init prevents first-call race condition
+        self._lock = asyncio.Lock()
+        # Eager lock (Python 3.10+): creating Lock() does not need a running
+        # loop, so construction from a worker/Tk thread is safe. Lazy init
+        # (`_lock = None` then create inside think()) races two first calls.
         
         load_dotenv()
         # [V8.1] Use config or env
@@ -400,9 +403,9 @@ class GroqBrain:
             else:
                 reply = choice.message.content or ""
 
-            # [V16.6] Reasoning model <think> bloklarını temizle
-            # Qwen, DeepSeek vb. modeller <think>...</think> üretebilir
-            reply = re.sub(r'<think>.*?</think>', '', reply, flags=re.DOTALL).strip()
+            # [V16.6] Reasoning model <think> — closed AND truncated
+            from core.reasoning import strip_reasoning
+            reply = strip_reasoning(reply)
 
             #4. Update Chat History
             if not bypass_history:

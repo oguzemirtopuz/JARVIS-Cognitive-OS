@@ -33,12 +33,15 @@ class ExecutionPlan:
         return f"Plan: {' → '.join(s.protocol_tag for s in self.steps)} ({self.total_steps} step)"
 
 ALIAS_MAP = {
-    "SEARCH": "GOOGLE_SEARCH", "GOOGLE": "GOOGLE_SEARCH", "YOUTUBE": "YT_SEARCH",
+    "SEARCH": "WEB_SEARCH", "GOOGLE": "GOOGLE_SEARCH", "YOUTUBE": "YT_SEARCH",
     "YOUTUBE_SEARCH": "YT_SEARCH", "YOUTUBE_PLAY": "YT_PLAY", "OPEN": "WEB_OPEN",
     "KILL": "APP_KILL", "WHATSAPP": "WHATSAPP_MESSAGE", "WA_MESSAGE": "WHATSAPP_MESSAGE",
     "SHUTDOWN": "SYSTEM_SHUTDOWN", "POWER": "SYSTEM_POWER",
     "REMEMBER_THIS": "REMEMBER", "SAVE_MEMORY": "REMEMBER",
     "MAP": "MAP_SHOW", "CHART": "CHART_SHOW", "GRAPH": "CHART_SHOW",
+    # LLM sometimes names the plan step after the post-tool signal.
+    # VISION_INTERPRET is a next_action, not a protocol — fold it into VISION.
+    "VISION_INTERPRET": "VISION",
 }
 
 def _apply_filters(tag: str, arg: str) -> tuple:
@@ -46,9 +49,20 @@ def _apply_filters(tag: str, arg: str) -> tuple:
     tag = ALIAS_MAP.get(tag, tag)
     return tag, arg
 
+PLAN_BLOCK_RE = re.compile(r'\[PLAN\](.*?)\[/PLAN\]', re.DOTALL | re.IGNORECASE)
+PLAN_MARKER_RE = re.compile(r'\[/?PLAN\]', re.IGNORECASE)
+
+def contains_plan_block(response: str) -> bool:
+    """True if the text carries plan markup, whether or not it parses.
+
+    Used to keep plan syntax out of speech: an unclosed or unknown-tag
+    [PLAN] block is machine output, not an answer for the user."""
+    if not response: return False
+    return PLAN_MARKER_RE.search(response) is not None
+
 def parse_plan(response: str) -> Optional[ExecutionPlan]:
     """Parses [PLAN]...[/PLAN] block from LLM response."""
-    match = re.search(r'\[PLAN\](.*?)\[/PLAN\]', response, re.DOTALL | re.IGNORECASE)
+    match = PLAN_BLOCK_RE.search(response)
     if not match: return None
     body = match.group(1).strip()
     if not body: return None
@@ -66,6 +80,7 @@ def parse_plan(response: str) -> Optional[ExecutionPlan]:
         "SEARCH", "GOOGLE", "YOUTUBE", "YOUTUBE_SEARCH", "YOUTUBE_PLAY",
         "OPEN", "KILL", "WHATSAPP", "WA_MESSAGE", "SHUTDOWN", "POWER",
         "REMEMBER_THIS", "SAVE_MEMORY", "MAP", "CHART", "GRAPH",
+        "VISION_INTERPRET",
     }
 
     for line in body.split('\n'):
@@ -95,9 +110,23 @@ def parse_plan(response: str) -> Optional[ExecutionPlan]:
         tag, arg = _apply_filters(tag, arg)
         num += 1; steps.append(PlanNode(step_number=num, protocol_tag=tag, argument=arg))
     if not steps: return None
+    _prefer_web_search_when_eval_follows(steps)
     plan = ExecutionPlan(steps=steps)
     logger.info(f"Plan parsed: {plan.get_context_summary()}")
     return plan
+
+
+def _prefer_web_search_when_eval_follows(steps: list) -> None:
+    """GOOGLE_SEARCH opens a tab and returns no page text.
+
+    A later LLM_EVAL / WHATSAPP_MESSAGE needs that text. Rewrite the
+    gather step to WEB_SEARCH so the eval tool is not fed {}."""
+    tags = {s.protocol_tag.upper() for s in steps}
+    if "LLM_EVAL" not in tags and "WHATSAPP_MESSAGE" not in tags:
+        return
+    for s in steps:
+        if s.protocol_tag.upper() == "GOOGLE_SEARCH":
+            s.protocol_tag = "WEB_SEARCH"
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
