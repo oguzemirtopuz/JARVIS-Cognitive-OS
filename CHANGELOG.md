@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v16.9.0] - 2026-08-20
+### Fixed
+- **[GUI/Shutdown] Coordinated engine teardown (`#25`, `#28`):** Window close no longer calls `os._exit()` before Playwright, ChromaDB, and async tasks finish. Shutdown is signaled through the IO bridge, `engine.shutdown()` is idempotent, stdout is restored before cleanup, and `os._exit` remains only as a last-resort hang watchdog.
+- **[Planner/Replan] Blind recovery (`#10`):** `replan()` now includes the failed step number, protocol, argument, and last tool error so the model does not blindly repeat the same failing step.
+- **[Memory] Silent save toasts (`#13`):** A failing "I learned" GUI callback is logged instead of swallowed, without rolling back a successful Chroma write.
+- **[Audio] Silent TTS/STT startup (`#31`, `#32`):** Voice wiring moved to `_attach_voice()`; import or device failures are logged and shown in the HUD while text mode keeps working.
+- **[Reasoning] Truncated `<think>` protocol leak:** Unclosed Qwen/DeepSeek reasoning blocks are stripped before plan/protocol parsing so quoted `[PROTOCOL: LLM_EVAL]` examples are not executed. Truncated-only replies are not spoken raw.
+- **[Tools/LLM_EVAL] Empty eval pipeline:** Evaluation refuses to call the model when no collected source data exists (`WEB_SEARCH` and similar), strips reasoning tags from answers, and raises `max_tokens` off the 256 cutoff that aborted mid-thought.
+- **[Planner] Research-then-score search trap:** `SEARCH` aliases to `WEB_SEARCH` (content). A `GOOGLE_SEARCH` step in the same plan as `LLM_EVAL` or WhatsApp is rewritten to `WEB_SEARCH` so later steps are not fed `{}`. Standalone `GOOGLE_SEARCH` still opens a visible tab.
+- **[Planner/Vision] `VISION_INTERPRET` vs `VISION`:** Plan steps named after the post-tool signal fold into `VISION`; `VISION_INTERPRET` remains a `next_action`.
+- **[Executor] Unverified success:** Tools that claimed `success=True` without `verified=True` were silently downgraded. The gate stays; missing flags on live browser/system success paths are set; a mismatch is logged.
+- **[Brain] Lock contract:** Eager `asyncio.Lock` is kept (first-call race). Construction from a thread without a running loop is safe on Python 3.10+.
+- **[IO/Translate] Translator model:** `_translate_to_tr` uses `brain_models[0]` instead of a hardcoded compact model, with a higher token budget and reasoning-tag strip.
+
+### Added
+- **[Core] `core/reasoning.py`:** Shared closed-and-unclosed `<think>` sanitizer used by the brain, engine, plan executor, LLM eval, reflector, and speak path.
+- **[Tests] Contract suites** for shutdown, replan/memory/voice, plan detection, verified results, vision aliases, brain lock, and the GitHub score / `LLM_EVAL` pipeline.
+
+---
+
 ## [v16.8.0] - 2026-08-18
 ### Added
 - **[Audio/SoundEffects] Zero-Dependency Asynchronous Cues:** Introduced `audio/sound_effects.py` to synthesize in-memory futuristic dual-tone audio cues (880Hz → 1320Hz) upon speech completion.

@@ -24,7 +24,11 @@ class MockTool(BaseTool):
             raise Exception("Mock error")
         if self._returns_none:
             return None
-        return ToolResult(success=self._success, message="Mock result")
+        # A well-behaved tool proves its own success; the executor rejects
+        # success it cannot verify.
+        return ToolResult(
+            success=self._success, verified=self._success, message="Mock result"
+        )
 
 @pytest.fixture
 def base_executor():

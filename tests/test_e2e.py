@@ -74,8 +74,10 @@ async def engine(mock_brain, mock_memory, mock_executor):
 @pytest.mark.asyncio
 async def test_e2e_successful_replanning_flow(engine, mock_brain, mock_executor):
     user_input = "python ac discord gir"
-    first_response = '```json\n{"hedef": "test", "alt_gorevler": [{"protocol": "GOOGLE_SEARCH", "arg": "python"}, {"protocol": "APP_OPEN", "arg": "discord"}]}\n```'
-    replan_response = '```json\n{"hedef": "kurtarma", "alt_gorevler": [{"protocol": "WEB_OPEN", "arg": "discord.com"}]}\n```'
+    # Live contract is the text [PLAN] block; JSON planning belongs to
+    # PlannerEngine/ExecutionGraph, not to this path.
+    first_response = "[PLAN]\n1. GOOGLE_SEARCH python\n2. APP_OPEN discord\n[/PLAN]"
+    replan_response = "[PLAN]\n1. WEB_OPEN discord.com\n[/PLAN]"
     
     mock_brain.think.side_effect = [first_response, replan_response]
     
@@ -125,12 +127,16 @@ async def test_e2e_graceful_fallback_garbage_llm(engine, mock_brain):
 
 @pytest.mark.asyncio
 async def test_vision_condition_node(engine, mock_brain, mock_executor):
-    response = "[PLAN]\n1. VISION_INTERPRET Check display status\n[/PLAN]"
+    # Live contract: the plan step is VISION. VISION_INTERPRET is the
+    # tool's next_action, not a protocol the parser should look for.
+    response = "[PLAN]\n1. VISION Check display status\n[/PLAN]"
     mock_brain.think.return_value = response
     
     mock_executor.execute_tool.return_value = ToolResult(
-        success=True, 
+        success=True,
+        verified=True,
         message="Ekran okundu.",
+        data={"raw_analysis": "display"},
         next_action="VISION_INTERPRET"
     )
     

@@ -406,6 +406,7 @@ class GoogleSearchTool(BaseTool):
             return ToolResult(
 
                 success=True,
+                verified=True,
 
                 message=f"Searched for '{query}' on Google (webbrowser fallback).",
 
@@ -552,6 +553,7 @@ class WebOpenTool(BaseTool):
             return ToolResult(
 
                 success=True,
+                verified=True,
 
                 message=f"'{url}' is opened. Title: {title}",
 
@@ -574,6 +576,7 @@ class WebOpenTool(BaseTool):
             return ToolResult(
 
                 success=True,
+                verified=True,
 
                 message=f"'{url}' opened (webbrowser fallback).",
 
@@ -654,6 +657,7 @@ class CloseLastTabTool(BaseTool):
             return ToolResult(
 
                 success=True,
+                verified=True,
 
                 message="The last opened tab has been closed.",
 
@@ -746,6 +750,7 @@ class YouTubeSearchTool(BaseTool):
             return ToolResult(
 
                 success=True,
+                verified=True,
 
                 message=f"Searched for '{query}' on YouTube.",
 
@@ -768,6 +773,7 @@ class YouTubeSearchTool(BaseTool):
             return ToolResult(
 
                 success=True,
+                verified=True,
 
                 message=f"Searched for '{query}' on YouTube.",
 
@@ -788,6 +794,7 @@ class YouTubeSearchTool(BaseTool):
             return ToolResult(
 
                 success=True,
+                verified=True,
 
                 message=f"Searched for '{query}' on YouTube (fallback).",
 
@@ -878,6 +885,7 @@ class YouTubePlayTool(BaseTool):
             return ToolResult(
 
                 success=True,
+                verified=True,
 
                 message=f"Opened '{query}' on YouTube (webbrowser).",
 
@@ -918,6 +926,7 @@ class YouTubePlayTool(BaseTool):
             return ToolResult(
 
                 success=True,
+                verified=True,
 
                 message=f"Playing '{video_title}' on YouTube.",
 
@@ -1277,7 +1286,7 @@ class WebSearchTool(BaseTool):
 
             client = AsyncGroq(api_key=api_key)
 
-            model = getattr(brain.config, "brain_models", ["llama-3.3-70b-versatile"])[0]
+            model = getattr(brain.config, "brain_models", ["qwen/qwen3.6-27b"])[0]
 
 
 

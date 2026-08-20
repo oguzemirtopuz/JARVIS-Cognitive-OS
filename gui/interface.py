@@ -12,6 +12,7 @@ Innovations:
 
 import customtkinter as ctk
 import tkinter as tk
+import asyncio
 import threading
 import queue
 import sys
@@ -394,6 +395,15 @@ class GUIStream(io.IOBase):
     def seekable(self): return False
 
 
+# ── Shutdown timing ──────────────────────────────────────────────────────────
+# The engine lives in a daemon thread with its own asyncio loop, so the window
+# must not close before that loop had a chance to release Playwright, ChromaDB
+# and the background tasks.
+ENGINE_SHUTDOWN_WAIT_S = 6.0   # engine breaks its input loop and cleans up itself
+ENGINE_CLEANUP_WAIT_S  = 4.0   # fallback when the loop is parked (e.g. mid-listen)
+FORCE_EXIT_GRACE_S     = 5.0   # last resort if interpreter exit itself hangs
+
+
 # ── Main GUI Class ────────────────────────────── ──────────────────────────────
 class JarvisInterface:
     def __init__(self):
@@ -419,6 +429,11 @@ class JarvisInterface:
         self._anim_dir   = 1
         self._anim_glow  = 0.0
         self.engine      = None
+
+        # Shutdown coordination with the engine thread
+        self._closing        = False
+        self._engine_loop    = None              # engine's asyncio loop
+        self._engine_stopped = threading.Event()  # set when that loop exits
 
         # [LANG] Language: "en" or "tr"
         # Load from user settings
@@ -1651,6 +1666,35 @@ class JarvisInterface:
     # ─────────────────────────────────────────────────────────────────────────
     # ENGINE START
     # ─────────────────────────────────────────────────────────────────────────
+    def _attach_voice(self, engine) -> None:
+        """Wires TTS and STT into the engine.
+
+        Voice is optional — the engine keeps working in text mode — so a failure
+        here must not stop startup. It must still be reported: swallowed
+        silently it looks like a mute assistant or a dead microphone."""
+        try:
+            from audio.tts import TextToSpeech
+            tts = TextToSpeech()
+            engine.set_tts(tts.speak)
+        except Exception as e:
+            logger.warning(f"TTS unavailable: {e}", exc_info=True)
+            self._append_log(
+                f"[VOICE] TTS could not start — replies stay text-only: {e}",
+                "error",
+            )
+
+        try:
+            from audio.stt import SpeechToText
+            stt = SpeechToText()
+            engine.set_stt(stt.listen)
+            engine.set_stt_instance(stt)
+        except Exception as e:
+            logger.warning(f"STT unavailable: {e}", exc_info=True)
+            self._append_log(
+                f"[VOICE] STT could not start — microphone disabled, use text mode: {e}",
+                "error",
+            )
+
     def _start_jarvis(self):
         icon_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -1667,6 +1711,9 @@ class JarvisInterface:
         def launch():
             async def _async_launch():
                 try:
+                    # _on_close() schedules the engine's cleanup onto this loop
+                    self._engine_loop = asyncio.get_running_loop()
+
                     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                     if project_root not in sys.path:
                         sys.path.insert(0, project_root)
@@ -1681,20 +1728,7 @@ class JarvisInterface:
                     self.engine.text_input_queue = self.input_queue
                     self.engine.set_gui_callback(self._update_status)
 
-                    try:
-                        from audio.tts import TextToSpeech
-                        tts = TextToSpeech()
-                        self.engine.set_tts(tts.speak)
-                    except Exception:
-                        pass
-
-                    try:
-                        from audio.stt import SpeechToText
-                        stt = SpeechToText()
-                        self.engine.set_stt(stt.listen)
-                        self.engine.set_stt_instance(stt)
-                    except Exception:
-                        pass
+                    self._attach_voice(self.engine)
 
                     # [10/10] Bind all callbacks
                     self.engine.io_bridge.set_card_callback(self.display_card)
@@ -1729,8 +1763,12 @@ class JarvisInterface:
                 except Exception as e:
                     self._append_log(f"[CRITICAL ERROR] Engine error: {e}", "error")
 
-            import asyncio
-            asyncio.run(_async_launch())
+            try:
+                asyncio.run(_async_launch())
+            finally:
+                # Reached only after engine.shutdown() completed (or crashed),
+                # so _on_close() can use this as the "cleanup is done" signal.
+                self._engine_stopped.set()
 
         threading.Thread(target=launch, daemon=True).start()
 
@@ -1877,13 +1915,76 @@ $s.Description     = "J.A.R.V.I.S. AI Assistant"
     # CLOSE / SHUTDOWN
     # ─────────────────────────────────────────────────────────────────────────
     def _on_close(self):
+        # Re-entrant: request_shutdown() below echoes a "SHUTTING DOWN" status
+        # back through _update_status(), which schedules _on_close() again.
+        if self._closing:
+            return
+        self._closing = True
         self._running = False
+
+        # Restore stdout first so engine shutdown logs go to the console instead
+        # of Tk widgets that are about to be destroyed.
         try:
             sys.stdout = sys.__stdout__
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"stdout could not be restored: {e}")
+
+        self._shutdown_engine()
+
+        self._arm_force_exit(FORCE_EXIT_GRACE_S)
         self.root.destroy()
-        os._exit(0)
+
+    def _shutdown_engine(self) -> bool:
+        """Lets the engine thread close its subsystems before the process dies.
+
+        Returns True if the engine reported a clean shutdown."""
+        engine = self.engine
+        if engine is None:
+            return True
+
+        # 1. Break the input loop: sets the shutdown flag and drops the
+        #    "__SHUTDOWN__" sentinel into the input queue.
+        try:
+            engine.io_bridge.request_shutdown()
+        except Exception as e:
+            logger.warning(f"Shutdown signal could not be delivered: {e}")
+
+        # 2. Preferred path — engine.start() falls through to engine.shutdown()
+        #    and the thread's asyncio.run() returns.
+        if self._engine_stopped.wait(ENGINE_SHUTDOWN_WAIT_S):
+            logger.info("Engine shut down cleanly.")
+            return True
+
+        # 3. Fallback — the loop is parked somewhere that ignores the sentinel
+        #    (a long STT listen, a running tool). Release the subsystems from
+        #    here instead of killing the process with them still open.
+        loop = self._engine_loop
+        if loop is None or loop.is_closed():
+            logger.warning("Engine loop unavailable; subsystems may not be released.")
+            return False
+
+        try:
+            future = asyncio.run_coroutine_threadsafe(engine.shutdown(), loop)
+            future.result(ENGINE_CLEANUP_WAIT_S)
+            logger.info("Engine subsystems released via fallback path.")
+            return True
+        except Exception as e:
+            logger.warning(f"Engine cleanup incomplete: {e}")
+            return False
+
+    @staticmethod
+    def _arm_force_exit(delay: float) -> None:
+        """Guarantees the process dies even if interpreter exit hangs.
+
+        Cleanup has already run by this point, so a hard exit here is safe —
+        unlike calling os._exit() before the engine had a chance to close.
+        A normal exit wins the race and this daemon timer never fires."""
+        def _kill():
+            time.sleep(delay)
+            logger.warning("Exit hung; forcing process termination.")
+            os._exit(0)
+
+        threading.Thread(target=_kill, daemon=True, name="jarvis-force-exit").start()
 
     def run(self):
         self.root.mainloop()

@@ -48,7 +48,9 @@ async def test_integration_through_execute_tool():
     mock_tool.protocol_tag = "ECHO_TOOL"
     mock_tool.name = "echo"
     mock_tool.parameters = {"text": {"type": "string"}}
-    mock_tool.execute = AsyncMock(side_effect=lambda p, c: ToolResult(success=True, message=p["text"]))
+    mock_tool.execute = AsyncMock(
+        side_effect=lambda p, c: ToolResult(success=True, verified=True, message=p["text"])
+    )
     
     executor.registry.register(mock_tool)
     

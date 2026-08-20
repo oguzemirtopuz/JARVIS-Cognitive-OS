@@ -11,7 +11,8 @@ import json
 import os
 from typing import Optional, List, Any
 
-from core.planner import parse_plan, ExecutionPlan, PlanNode
+from core.planner import parse_plan, contains_plan_block, ExecutionPlan, PlanNode, ALIAS_MAP
+from core.reasoning import strip_reasoning
 from tools.base_tool import ToolResult
 
 logger = logging.getLogger("JARVIS.PlanExecutor")
@@ -99,7 +100,10 @@ class PlanExecutor:
 
     async def execute_node(self, task_state, node: PlanNode) -> bool:
         """Executes a single plan node. [V13.0 Integrated]"""
-        
+        canonical = ALIAS_MAP.get(node.protocol_tag.upper())
+        if canonical:
+            node.protocol_tag = canonical
+
         #1. Integrated Kernel Protocols (No tools required)
         if node.protocol_tag.upper() == "SPEAK":
             await self.io_bridge.speak(str(node.argument))
@@ -198,8 +202,7 @@ class PlanExecutor:
 
     async def execute_single(self, task_state, response: str) -> None:
         """Executes all protocol tags in the response in order."""
-        # [V16.6] Reasoning model <think> bloklarını temizle
-        response = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL).strip()
+        response = strip_reasoning(response)
 
         # [PROTOL LEAK PROTECTION - ULTRA SECURE]
         # The answer is only the official J.A.R.V.I.S. If the protocol starts with [PROTOCOL: or [PLAN], it is executed.
@@ -427,19 +430,54 @@ class PlanExecutor:
         return current_result
 
     async def replan(self, task_state, old_plan, failed_node, error_msg: str) -> Optional[ExecutionPlan]:
+        """Asks the brain for a replacement plan after a step failed.
+
+        The failed step and the tool's own error are part of the prompt —
+        without them the model replans blind and tends to emit the same
+        failing step again."""
+        failure_detail = error_msg
+        if failed_node is not None:
+            failure_detail = (
+                f"{error_msg} — step {failed_node.step_number} "
+                f"[{failed_node.protocol_tag}] arg='{str(failed_node.argument)[:200]}'"
+            )
+            tool_error = self._last_tool_error(task_state, failed_node.protocol_tag)
+            if tool_error:
+                failure_detail += f"\nTool error: {tool_error}"
+
         replan_prompt = (
-            f"MISSION FAILED: {error_msg}.\n"
+            f"MISSION FAILED: {failure_detail}.\n"
             f"Mevcut durum: {old_plan.get_context_summary()}\n"
             f"Completed step results: {task_state.get_results()}\n"
-            f"Generate a new plan."
+            f"Do NOT repeat the failed step unchanged. Generate a new plan."
         )
         try:
             new_response = await self.brain.think(replan_prompt)
             return parse_plan(new_response)
-        except Exception: return None
+        except Exception as e:
+            logger.warning(f"[replan] New plan could not be produced: {e}")
+            return None
+
+    @staticmethod
+    def _last_tool_error(task_state, protocol_tag: str) -> str:
+        """Error text of that tool's most recent failed call, if recorded."""
+        history = getattr(task_state, "tool_history", None) or []
+        for call in reversed(history):
+            if str(call.get("tool", "")).upper() != protocol_tag.upper():
+                continue
+            result = call.get("result") or {}
+            if result.get("success"):
+                continue
+            return str(result.get("error") or result.get("message") or "").strip()
+        return ""
 
     async def detect_and_parse_plan(self, response: str, user_input: str) -> Optional[ExecutionPlan]:
-        if "PLAN" in response.upper() or "```json" in response:
+        """Text-plan gate: only a [PLAN] block counts as a plan here.
+
+        JSON planning belongs to PlannerEngine/ExecutionGraph. The old
+        ```json trigger only ever reached parse_plan, which cannot read
+        JSON, so it advertised support that does not exist."""
+        if contains_plan_block(response):
             plan = parse_plan(response)
             if plan:
                 plan.original_request = user_input
