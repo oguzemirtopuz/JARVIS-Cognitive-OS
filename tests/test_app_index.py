@@ -4,8 +4,9 @@
 import sys
 import os
 
-sys.path.insert(0, r"c:\Users\proog\OneDrive\Desktop\Projects\My_Jarvis_Project")
-os.chdir(r"c:\Users\proog\OneDrive\Desktop\Projects\My_Jarvis_Project")
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+os.chdir(project_root)
 
 import logging
 logging.basicConfig(level=logging.WARNING)

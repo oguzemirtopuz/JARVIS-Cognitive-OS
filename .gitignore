@@ -1,6 +1,12 @@
 # API Keys and Secrets
 .env
 
+# Virtual Environments
+.venv/
+venv/
+env/
+
+
 # Updater temp/backup files
 _jarvis_backup/
 _update_temp.zip

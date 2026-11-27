@@ -1718,8 +1718,18 @@ class JarvisInterface:
                     if project_root not in sys.path:
                         sys.path.insert(0, project_root)
 
-                    from core.engine import ExecutionEngine
-                    from core.config import EngineConfig
+                    try:
+                        from core.engine import ExecutionEngine
+                        from core.config import EngineConfig
+                    except ModuleNotFoundError as mne:
+                        self._append_log(f"[SELF-HEALING] Eksik modül tespit edildi: {mne.name}. Otomatik onarılıyor...", "warning")
+                        try:
+                            from core.dependency_guard import ensure_dependencies
+                            ensure_dependencies(project_root, auto_install=True)
+                        except Exception as guard_err:
+                            logger.error(f"Dependency guard error: {guard_err}")
+                        from core.engine import ExecutionEngine
+                        from core.config import EngineConfig
 
                     config = EngineConfig()
                     self.engine = ExecutionEngine(config)

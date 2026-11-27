@@ -46,6 +46,13 @@ class StderrFilter(object):
 
 sys.stderr = StderrFilter(sys.stderr)
 
+# [Self-Healing] Ortam ve bağımlılık koruması
+try:
+    from core.dependency_guard import ensure_environment
+    ensure_environment()
+except Exception:
+    pass
+
 from core.engine import ExecutionEngine
 from core.config import EngineConfig
 

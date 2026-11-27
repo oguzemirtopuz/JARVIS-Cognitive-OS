@@ -81,6 +81,11 @@ FOLDER_ALIAS_MAP = {
     "music":         "music",
 }
 
+# Geriye dönük uyumluluk aliasları (Testler ve eski modüller için)
+PATH_ALIASES = FOLDER_ALIAS_MAP
+
+
+
 
 def _resolve_path(raw: str, context: dict = None) -> tuple[Path, str]:
     """Converts the raw path string to absolute Path.
@@ -154,6 +159,9 @@ def _resolve_path(raw: str, context: dict = None) -> tuple[Path, str]:
     # 5. Relative → expanduser resolve
     expanded = Path(raw).expanduser().resolve()
     return expanded, f"relative:{raw}→{expanded}"
+
+_resolve_alias = _resolve_path
+
 
 
 def _set_last_active_file(context: dict, path: Path):

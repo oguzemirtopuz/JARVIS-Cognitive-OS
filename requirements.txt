@@ -26,3 +26,5 @@ requests==2.33.1
 staticmap==0.5.7
 pywin32==311
 scikit-learn==1.8.0
+PyYAML>=6.0.2
+
