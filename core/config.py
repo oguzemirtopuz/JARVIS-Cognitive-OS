@@ -59,7 +59,7 @@ class EngineConfig:
 
     # ── LLM Model Fallback Chain ──
     brain_models: list = field(default_factory=lambda: [
-        "qwen/qwen3.6-27b",       # Ana model — yüksek TPM, reasoning desteği
+        "qwen/qwen3.8-27b",       # Ana model — yüksek TPM, reasoning desteği
         "openai/gpt-oss-20b",     # Hızlı fallback — compact MoE model
     ])
     ping_model: str = None         # Fallback test model (if None, brain_models[0] is used)

@@ -49,30 +49,32 @@ try:
 except ImportError:
     HAS_PIL = False
 
-# ── Color Palette ────────────────────────────────────────────────────────────
-BG_DEEP     = "#040810"
-BG_PANEL    = "#070D1C"
-BG_CARD     = "#091224"
-ACCENT_BLUE = "#00C8FF"
-ACCENT_DIM  = "#003D5C"
-ACCENT_RING = "#0077AA"
-ORANGE      = "#FF6B35"
-GREEN_OK    = "#00E87A"
-RED_ERR     = "#FF3B3B"
-TEXT_MAIN   = "#C8E8FF"
-TEXT_DIM    = "#35526B"
-LOG_JARVIS  = "#00C8FF"
-LOG_USER    = "#90C8E8"
-LOG_ERROR   = "#FF6B35"
-LOG_SYSTEM  = "#446680"
-LOG_OK      = "#00E87A"
+# ── Color Palette (Ultra-Clean Obsidian / Aeronautical Core) ─────────────────
+BG_DEEP       = "#060709"
+BG_PANEL      = "#090A0F"
+BG_CARD       = "#10131B"
+BG_CARD_HOVER = "#161A26"
+ACCENT_BLUE   = "#38BDF8"
+ACCENT_DIM    = "#181D2A"
+ACCENT_RING   = "#0284C7"
+ORANGE        = "#F59E0B"
+GREEN_OK      = "#10B981"
+RED_ERR       = "#EF4444"
+TEXT_MAIN     = "#F1F5F9"
+TEXT_MUTED    = "#94A3B8"
+TEXT_DIM      = "#64748B"
+LOG_JARVIS    = "#38BDF8"
+LOG_USER      = "#93C5FD"
+LOG_ERROR     = "#F87171"
+LOG_SYSTEM    = "#64748B"
+LOG_OK        = "#10B981"
 
 # ── Language Strings ─────────────────────────────────────────────────────────
 LANG = {
     "en": {
         "title":              "J.A.R.V.I.S. — System Control Center",
-        "subtitle":           "JUST A RATHER VERY INTELLIGENT SYSTEM",
-        "active":             "● ACTIVE v2.0",
+        "subtitle":           "AUTONOMOUS COGNITIVE OS // v5.9",
+        "active":             "● ONLINE",
         "last_command":       "LAST COMMAND",
         "last_response":      "LAST RESPONSE",
         "screen_analysis":    "👁 SCREEN ANALYSIS",
@@ -143,8 +145,8 @@ LANG = {
     },
     "tr": {
         "title":              "J.A.R.V.I.S. — Sistem Kontrol Merkezi",
-        "subtitle":           "OLDUKÇA ZEKICE BİR SİSTEM",
-        "active":             "● AKTİF v2.0",
+        "subtitle":           "OTONOM BİLİŞSEL İŞLETİM SİSTEMİ",
+        "active":             "● ÇEVRİMİÇİ",
         "last_command":       "SON KOMUT",
         "last_response":      "SON YANIT",
         "screen_analysis":    "👁 EKRAN ANALİZİ",
@@ -583,36 +585,36 @@ class JarvisInterface:
     # UI BUILDING
     # ─────────────────────────────────────────────────────────────────────────
     def _build_ui(self):
-        # Top Bar
-        topbar = tk.Frame(self.root, bg="#030810", height=52)
+        # Top Bar (Clean Minimalist Obsidian)
+        topbar = tk.Frame(self.root, bg="#07080D", height=50)
         topbar.pack(fill="x", side="top")
         topbar.pack_propagate(False)
 
         tk.Label(topbar, text="  ⬡  J·A·R·V·I·S",
-                 font=("Consolas", 17, "bold"),
-                 fg=ACCENT_BLUE, bg="#030810").pack(side="left", padx=16, pady=10)
+                 font=("Consolas", 15, "bold"),
+                 fg=ACCENT_BLUE, bg="#07080D").pack(side="left", padx=16, pady=10)
 
         self.subtitle_lbl = tk.Label(topbar, text=self._t("subtitle"),
-                 font=("Consolas", 8), fg=TEXT_DIM, bg="#030810")
+                 font=("Consolas", 8), fg=TEXT_DIM, bg="#07080D")
         self.subtitle_lbl.pack(side="left", pady=16)
 
         self.version_lbl = tk.Label(topbar, text=self._t("active"),
-                                    font=("Consolas", 10, "bold"),
-                                    fg=GREEN_OK, bg="#030810")
-        self.version_lbl.pack(side="right", padx=10)
+                                    font=("Consolas", 9, "bold"),
+                                    fg=ACCENT_BLUE, bg="#07080D")
+        self.version_lbl.pack(side="right", padx=14)
 
-        # [LANG] Language toggle button
+        # [LANG] Language toggle button (Clean Pill)
         self.lang_btn = tk.Label(
             topbar, text=self._t("lang_btn"),
-            font=("Consolas", 10, "bold"),
-            fg="#000000", bg=ACCENT_BLUE,
-            cursor="hand2", padx=10, pady=4,
-            relief="flat"
+            font=("Consolas", 9, "bold"),
+            fg=TEXT_MAIN, bg=BG_CARD,
+            cursor="hand2", padx=10, pady=3,
+            relief="flat", highlightbackground=ACCENT_DIM, highlightthickness=1
         )
-        self.lang_btn.pack(side="right", padx=(0, 8), pady=12)
+        self.lang_btn.pack(side="right", padx=(0, 10), pady=12)
         self.lang_btn.bind("<Button-1>", lambda e: self._toggle_language())
-        self.lang_btn.bind("<Enter>", lambda e: self.lang_btn.configure(bg=ACCENT_RING, fg=TEXT_MAIN))
-        self.lang_btn.bind("<Leave>", lambda e: self.lang_btn.configure(bg=ACCENT_BLUE, fg="#000000"))
+        self.lang_btn.bind("<Enter>", lambda e: self.lang_btn.configure(bg=BG_CARD_HOVER, fg=ACCENT_BLUE))
+        self.lang_btn.bind("<Leave>", lambda e: self.lang_btn.configure(bg=BG_CARD, fg=TEXT_MAIN))
 
         tk.Frame(self.root, bg=ACCENT_DIM, height=1).pack(fill="x")
 
@@ -638,20 +640,24 @@ class JarvisInterface:
             segmented_button_selected_color=ACCENT_BLUE,
             segmented_button_selected_hover_color=ACCENT_RING,
             segmented_button_unselected_color=BG_CARD,
-            segmented_button_unselected_hover_color=ACCENT_DIM,
+            segmented_button_unselected_hover_color=BG_CARD_HOVER,
+            text_color=TEXT_MAIN,
             border_width=0
         )
         self.tabview.pack(fill="both", expand=True, padx=2, pady=2)
 
-        tab_log     = self.tabview.add("LOGS")
         tab_mission = self.tabview.add("MISSION CONTROL")
         tab_memory  = self.tabview.add("MEMORY")
+        tab_log     = self.tabview.add("LOGS")
         tab_settings = self.tabview.add("SETTINGS")
 
-        self._build_log_panel(tab_log)
         self._build_mission_panel(tab_mission)
         self._build_memory_panel(tab_memory)
+        self._build_log_panel(tab_log)
         self._build_settings_panel(tab_settings)
+
+        # Mission Control sekmesini varsayılan yap
+        self.tabview.set("MISSION CONTROL")
 
         # Bottom Entry
         tk.Frame(self.root, bg=ACCENT_DIM, height=1).pack(fill="x")
@@ -664,114 +670,307 @@ class JarvisInterface:
     # HUD PANEL
     # ─────────────────────────────────────────────────────────────────────────
     def _build_hud_panel(self, parent):
-        self.canvas = tk.Canvas(parent, width=290, height=250,
+        # ── Minimalist Bilişsel Çekirdek (Orb / Core) ──
+        self.canvas = tk.Canvas(parent, width=290, height=210,
                                 bg=BG_PANEL, highlightthickness=0)
-        self.canvas.pack(pady=(14, 0))
+        self.canvas.pack(pady=(8, 0))
 
+        # Durum Göstergesi
         self.status_lbl = tk.Label(parent, text=f"● {self._t('starting')}",
-                                   font=("Consolas", 12, "bold"),
+                                   font=("Consolas", 10, "bold"),
                                    fg=ACCENT_BLUE, bg=BG_PANEL)
-        self.status_lbl.pack(pady=(4, 2))
+        self.status_lbl.pack(pady=(2, 6))
 
-        tk.Frame(parent, bg=ACCENT_DIM, height=1).pack(fill="x", padx=18, pady=6)
+        # ── Telemetri Barları (CPU & RAM) ──
+        telemetry_box = ctk.CTkFrame(parent, fg_color=BG_CARD, corner_radius=10,
+                                     border_width=1, border_color=ACCENT_DIM)
+        telemetry_box.pack(fill="x", padx=12, pady=(0, 6))
 
-        self.last_cmd_lbl = tk.Label(parent, text=self._t("last_command"), font=("Consolas", 8, "bold"),
-                 fg=TEXT_DIM, bg=BG_PANEL)
-        self.last_cmd_lbl.pack(padx=14, anchor="w")
-        self.last_cmd = tk.Label(parent, text="—", font=("Consolas", 10),
-                                 fg=TEXT_MAIN, bg=BG_PANEL, wraplength=280,
-                                 justify="left", anchor="w")
-        self.last_cmd.pack(padx=14, anchor="w", pady=(2, 6))
+        # CPU
+        cpu_header = tk.Frame(telemetry_box, bg=BG_CARD)
+        cpu_header.pack(fill="x", padx=10, pady=(6, 2))
+        tk.Label(cpu_header, text="CPU THREADS", font=("Consolas", 8), fg=TEXT_DIM, bg=BG_CARD).pack(side="left")
+        self.cpu_lbl = tk.Label(cpu_header, text="0%", font=("Consolas", 8, "bold"), fg=TEXT_MAIN, bg=BG_CARD)
+        self.cpu_lbl.pack(side="right")
 
-        self.last_resp_lbl = tk.Label(parent, text=self._t("last_response"), font=("Consolas", 8, "bold"),
-                 fg=TEXT_DIM, bg=BG_PANEL)
-        self.last_resp_lbl.pack(padx=14, anchor="w")
-        self.last_resp = tk.Label(parent, text="—", font=("Consolas", 10),
-                                  fg=ACCENT_BLUE, bg=BG_PANEL, wraplength=280,
-                                  justify="left", anchor="w")
-        self.last_resp.pack(padx=14, anchor="w", pady=(2, 6))
+        self.cpu_bar = ctk.CTkProgressBar(telemetry_box, height=4, corner_radius=2,
+                                          fg_color="#181D2A", progress_color=ACCENT_BLUE)
+        self.cpu_bar.set(0.0)
+        self.cpu_bar.pack(fill="x", padx=10, pady=(0, 6))
 
-        # [10/10] Vision Status Box
-        tk.Frame(parent, bg=ACCENT_DIM, height=1).pack(fill="x", padx=18, pady=4)
-        self.screen_lbl = tk.Label(parent, text=self._t("screen_analysis"), font=("Consolas", 8),
-                 fg=TEXT_DIM, bg=BG_PANEL)
-        self.screen_lbl.pack(padx=14, anchor="w")
-        self.vision_lbl = tk.Label(parent, text=self._t("waiting"),
-                                   font=("Consolas", 9), fg="#5588AA", bg=BG_PANEL,
-                                   wraplength=278, justify="left", anchor="w")
-        self.vision_lbl.pack(padx=14, anchor="w", pady=(2, 4))
+        # RAM
+        ram_header = tk.Frame(telemetry_box, bg=BG_CARD)
+        ram_header.pack(fill="x", padx=10, pady=(2, 2))
+        tk.Label(ram_header, text="MEMORY RESERVED", font=("Consolas", 8), fg=TEXT_DIM, bg=BG_CARD).pack(side="left")
+        self.ram_lbl = tk.Label(ram_header, text="0%", font=("Consolas", 8, "bold"), fg=TEXT_MAIN, bg=BG_CARD)
+        self.ram_lbl.pack(side="right")
 
-        # Mod Toggle
-        tk.Frame(parent, bg=ACCENT_DIM, height=1).pack(fill="x", padx=18, pady=4)
-        self.entry_mode_lbl = tk.Label(parent, text=self._t("entry_mode"), font=("Consolas", 8),
-                 fg=TEXT_DIM, bg=BG_PANEL)
-        self.entry_mode_lbl.pack(padx=14, anchor="w")
+        self.ram_bar = ctk.CTkProgressBar(telemetry_box, height=4, corner_radius=2,
+                                          fg_color="#181D2A", progress_color=TEXT_MUTED)
+        self.ram_bar.set(0.0)
+        self.ram_bar.pack(fill="x", padx=10, pady=(0, 8))
 
-        toggle_row = tk.Frame(parent, bg=BG_PANEL)
-        toggle_row.pack(padx=14, pady=6, anchor="w")
+        # ── Sesli / Yazılı Mod Seçici (Segmented Pill) ──
+        mode_pill = ctk.CTkFrame(parent, fg_color="#12151F", corner_radius=10,
+                                 border_width=1, border_color=ACCENT_DIM)
+        mode_pill.pack(fill="x", padx=12, pady=(0, 8))
 
-        self.voice_icon_lbl = tk.Label(toggle_row, text=self._t("voice"), font=("Consolas", 11),
-                 fg=TEXT_MAIN, bg=BG_PANEL)
-        self.voice_icon_lbl.pack(side="left", padx=(0, 8))
-        self.mode_switch = ctk.CTkSwitch(
-            toggle_row, text="", width=56, height=28,
-            fg_color=ACCENT_DIM, progress_color=ORANGE,
-            command=self._toggle_mode
+        self.btn_mode_voice = ctk.CTkButton(
+            mode_pill, text=self._t("voice"), height=30, corner_radius=8,
+            font=("Consolas", 10, "bold"),
+            fg_color=ACCENT_BLUE, text_color="#0A0C12",
+            hover_color=ACCENT_RING,
+            command=lambda: self._set_entry_mode(False)
         )
-        self.mode_switch.pack(side="left")
-        self.written_icon_lbl = tk.Label(toggle_row, text=self._t("written"), font=("Consolas", 11),
-                 fg=TEXT_DIM, bg=BG_PANEL)
-        self.written_icon_lbl.pack(side="left", padx=(8, 0))
+        self.btn_mode_voice.pack(side="left", fill="x", expand=True, padx=2, pady=2)
 
-        tk.Frame(parent, bg=ACCENT_DIM, height=1).pack(fill="x", padx=18, pady=(8, 4))
+        self.btn_mode_text = ctk.CTkButton(
+            mode_pill, text=self._t("written"), height=30, corner_radius=8,
+            font=("Consolas", 10),
+            fg_color="transparent", text_color=TEXT_MUTED,
+            hover_color=BG_CARD_HOVER,
+            command=lambda: self._set_entry_mode(True)
+        )
+        self.btn_mode_text.pack(side="left", fill="x", expand=True, padx=2, pady=2)
+
+        # ── Son İstek ve Son Yanıt (Kompakt ve Temiz) ──
+        cmd_box = ctk.CTkFrame(parent, fg_color=BG_CARD, corner_radius=10,
+                               border_width=1, border_color=ACCENT_DIM)
+        cmd_box.pack(fill="x", padx=12, pady=(0, 4))
+
+        self.last_cmd_lbl = tk.Label(cmd_box, text=self._t("last_command"), font=("Consolas", 7, "bold"),
+                                     fg=TEXT_DIM, bg=BG_CARD)
+        self.last_cmd_lbl.pack(padx=10, pady=(6, 1), anchor="w")
+        self.last_cmd = tk.Label(cmd_box, text="—", font=("Consolas", 9),
+                                 fg=TEXT_MAIN, bg=BG_CARD, wraplength=270,
+                                 justify="left", anchor="w")
+        self.last_cmd.pack(padx=10, pady=(0, 6), anchor="w")
+
+        resp_box = ctk.CTkFrame(parent, fg_color=BG_CARD, corner_radius=10,
+                                border_width=1, border_color=ACCENT_DIM)
+        resp_box.pack(fill="x", padx=12, pady=(0, 4))
+
+        self.last_resp_lbl = tk.Label(resp_box, text=self._t("last_response"), font=("Consolas", 7, "bold"),
+                                      fg=TEXT_DIM, bg=BG_CARD)
+        self.last_resp_lbl.pack(padx=10, pady=(6, 1), anchor="w")
+        self.last_resp = tk.Label(resp_box, text="—", font=("Consolas", 9),
+                                  fg=ACCENT_BLUE, bg=BG_CARD, wraplength=270,
+                                  justify="left", anchor="w")
+        self.last_resp.pack(padx=10, pady=(0, 6), anchor="w")
+
+        # Ekran Analizi Durumu
+        vision_box = ctk.CTkFrame(parent, fg_color=BG_CARD, corner_radius=10,
+                                  border_width=1, border_color=ACCENT_DIM)
+        vision_box.pack(fill="x", padx=12, pady=(0, 6))
+        self.screen_lbl = tk.Label(vision_box, text=self._t("screen_analysis"), font=("Consolas", 7),
+                                   fg=TEXT_DIM, bg=BG_CARD)
+        self.screen_lbl.pack(padx=10, pady=(4, 1), anchor="w")
+        self.vision_lbl = tk.Label(vision_box, text=self._t("waiting"),
+                                   font=("Consolas", 8), fg="#77AABB", bg=BG_CARD,
+                                   wraplength=270, justify="left", anchor="w")
+        self.vision_lbl.pack(padx=10, pady=(0, 6), anchor="w")
+
         self.copyright_lbl = tk.Label(parent, text=self._t("copyright"),
-                 font=("Consolas", 8), fg=TEXT_DIM, bg=BG_PANEL)
-        self.copyright_lbl.pack(pady=4)
+                                      font=("Consolas", 8), fg=TEXT_DIM, bg=BG_PANEL)
+        self.copyright_lbl.pack(side="bottom", pady=4)
+
+    def _set_entry_mode(self, is_text: bool):
+        """Giriş modunu (Sesli / Yazılı) dinamik günceller."""
+        self.text_mode = is_text
+        if is_text:
+            self.btn_mode_text.configure(fg_color=ACCENT_BLUE, text_color="#0A0C12", font=("Consolas", 10, "bold"))
+            self.btn_mode_voice.configure(fg_color="transparent", text_color=TEXT_MUTED, font=("Consolas", 10))
+            if hasattr(self, "text_input_frame"):
+                self.text_input_frame.pack(fill="x", side="bottom", padx=10, pady=5)
+            self._append_log(self._t("text_mode_active"), "system")
+        else:
+            self.btn_mode_voice.configure(fg_color=ACCENT_BLUE, text_color="#0A0C12", font=("Consolas", 10, "bold"))
+            self.btn_mode_text.configure(fg_color="transparent", text_color=TEXT_MUTED, font=("Consolas", 10))
+            if hasattr(self, "text_input_frame"):
+                self.text_input_frame.pack_forget()
+            self._append_log(self._t("voice_mode_active"), "system")
+        if self.engine:
+            self.engine.text_mode = is_text
+
 
     # ─────────────────────────────────────────────────────────────────────────
     # MISSION CONTROL — Rich Cards
     # ─────────────────────────────────────────────────────────────────────────
     def _build_mission_panel(self, parent):
-        # Live Vitals (CPU/RAM) Bar
-        self.vitals_frame = tk.Frame(parent, bg="#050A15", highlightbackground=ACCENT_DIM, highlightthickness=1)
-        self.vitals_frame.pack(fill="x", padx=5, pady=(5, 0))
-
-        self.vitals_label = tk.Label(self.vitals_frame, text=self._t("system_status"), font=("Consolas", 9, "bold"), fg=TEXT_DIM, bg="#050A15")
-        self.vitals_label.pack(side="left", padx=10, pady=6)
-        self.cpu_lbl = tk.Label(self.vitals_frame, text="CPU: %0", font=("Consolas", 9, "bold"), fg=ACCENT_BLUE, bg="#050A15")
-        self.cpu_lbl.pack(side="left", padx=10)
-        self.ram_lbl = tk.Label(self.vitals_frame, text="RAM: %0", font=("Consolas", 9, "bold"), fg=ACCENT_BLUE, bg="#050A15")
-        self.ram_lbl.pack(side="left", padx=10)
-
-        self.card_container = ctk.CTkScrollableFrame(
+        # Ana Taşıyıcı Scrollable Alan (Ferah ve Obsidyen)
+        self.mission_main_scroll = ctk.CTkScrollableFrame(
             parent, fg_color=BG_PANEL,
-            label_text=self._t("dynamic_cards"),
-            label_font=("Consolas", 11, "bold"),
-            label_text_color=ACCENT_BLUE,
-            label_fg_color="transparent",
             scrollbar_button_color=ACCENT_DIM,
             scrollbar_button_hover_color=ACCENT_BLUE
         )
-        self.card_container.pack(fill="both", expand=True, padx=5, pady=5)
+        self.mission_main_scroll.pack(fill="both", expand=True, padx=4, pady=4)
 
-        # Start card
-        self.display_card(
-            self._t("system_ready"),
-            self._t("system_ready_desc"),
-            None
+        # ── ÜST SATIR: Proaktif Zeka Durumu & Canlı Telemetri (2 Kart Yan Yana) ──
+        top_grid = ctk.CTkFrame(self.mission_main_scroll, fg_color="transparent")
+        top_grid.pack(fill="x", pady=(2, 10))
+        top_grid.grid_columnconfigure((0, 1), weight=1, uniform="group1")
+
+        # KART 1: PROAKTİF ZEKA DURUMU
+        self.card_proactive = ctk.CTkFrame(
+            top_grid, fg_color=BG_CARD, corner_radius=14,
+            border_width=1, border_color=ACCENT_DIM
         )
+        self.card_proactive.grid(row=0, column=0, sticky="nsew", padx=(0, 6), pady=0)
+
+        # Başlık ve Durum
+        tk.Label(self.card_proactive, text="PROAKTİF ZEKA DURUMU",
+                 font=("Consolas", 8, "bold"), fg=TEXT_DIM, bg=BG_CARD).pack(anchor="w", padx=16, pady=(14, 2))
+        
+        tk.Label(self.card_proactive, text="AKTİF — İZLEME MODU",
+                 font=("Consolas", 11, "bold"), fg=TEXT_MAIN, bg=BG_CARD).pack(anchor="w", padx=16, pady=(0, 4))
+
+        # EKG / Nabız Dalgası (Canvas)
+        self.ekg_canvas = tk.Canvas(self.card_proactive, height=26, bg=BG_CARD, highlightthickness=0)
+        self.ekg_canvas.pack(fill="x", padx=16, pady=2)
+        self._draw_ekg_wave()
+
+        # 3 Satırlık Monospaced Durum Akışı
+        proactive_lines = tk.Frame(self.card_proactive, bg=BG_CARD)
+        proactive_lines.pack(fill="x", padx=16, pady=(2, 14), anchor="w")
+        for line_txt in ["> Sistem kaynakları optimize edildi", "> Bağlam belleği senkronize edildi", "> Arka plan ajanları hazır"]:
+            tk.Label(proactive_lines, text=line_txt, font=("Consolas", 8),
+                     fg=TEXT_MUTED, bg=BG_CARD).pack(anchor="w", pady=1)
+
+        # KART 2: CANLI TELEMETRİ
+        self.card_telemetry = ctk.CTkFrame(
+            top_grid, fg_color=BG_CARD, corner_radius=14,
+            border_width=1, border_color=ACCENT_DIM
+        )
+        self.card_telemetry.grid(row=0, column=1, sticky="nsew", padx=(6, 0), pady=0)
+
+        tk.Label(self.card_telemetry, text="CANLI TELEMETRİ",
+                 font=("Consolas", 8, "bold"), fg=TEXT_DIM, bg=BG_CARD).pack(anchor="w", padx=16, pady=(14, 2))
+
+        # Canlı Dalga Grafiği Canvas
+        self.telemetry_canvas = tk.Canvas(self.card_telemetry, height=52, bg=BG_CARD, highlightthickness=0)
+        self.telemetry_canvas.pack(fill="x", padx=16, pady=4)
+        self._telemetry_phase = 0
+        self._draw_live_telemetry()
+
+        # Metrik Bilgileri (Gecikme & Veri Akışı)
+        telemetry_bottom = tk.Frame(self.card_telemetry, bg=BG_CARD)
+        telemetry_bottom.pack(fill="x", padx=16, pady=(4, 12))
+        
+        self.lat_lbl = tk.Label(telemetry_bottom, text="GECİKME: 12 ms", font=("Consolas", 8, "bold"),
+                                fg=TEXT_MUTED, bg=BG_CARD)
+        self.lat_lbl.pack(side="left")
+
+        self.flow_lbl = tk.Label(telemetry_bottom, text="VERİ AKIŞI: 84 MB/s", font=("Consolas", 8, "bold"),
+                                 fg=TEXT_MUTED, bg=BG_CARD)
+        self.flow_lbl.pack(side="right")
+
+        # ── ALT KART: GÖREV AKIŞI (Geniş & Zaman Damgalı Liste) ──
+        self.card_tasks = ctk.CTkFrame(
+            self.mission_main_scroll, fg_color=BG_CARD, corner_radius=14,
+            border_width=1, border_color=ACCENT_DIM
+        )
+        self.card_tasks.pack(fill="x", pady=(0, 10))
+
+        tk.Label(self.card_tasks, text="GÖREV AKIŞI",
+                 font=("Consolas", 8, "bold"), fg=TEXT_DIM, bg=BG_CARD).pack(anchor="w", padx=16, pady=(14, 8))
+
+        self.tasks_list_frame = tk.Frame(self.card_tasks, bg=BG_CARD)
+        self.tasks_list_frame.pack(fill="x", padx=16, pady=(0, 14))
+
+        # Örnek başlangıç görevleri (gerçek zaman damgalarıyla)
+        now_str = datetime.now().strftime("%H:%M:%S")
+        self._task_rows = [
+            ("Sistem Sağlık Taraması", now_str, ACCENT_BLUE),
+            ("Bellek İndeksleme", now_str, GREEN_OK),
+            ("Proaktif Analiz Motoru", now_str, TEXT_DIM),
+            ("Ağ Güvenlik Denetimi", now_str, TEXT_DIM),
+        ]
+        self._render_task_rows()
+
+        # ── DİNAMİK VERİ KARTLARI KONTEYNERI (Resim, Harita, Özel Çıktılar) ──
+        self.card_container = ctk.CTkFrame(self.mission_main_scroll, fg_color="transparent")
+        self.card_container.pack(fill="both", expand=True, pady=4)
+
         self._poll_vitals()
+
+    def _draw_ekg_wave(self):
+        """Kart 1 için zarif EKG / nabız dalgası çizer."""
+        self.ekg_canvas.delete("all")
+        w = 260
+        h = 24
+        mid = h / 2
+        points = [
+            (0, mid), (70, mid), (76, mid - 10), (82, mid + 10),
+            (88, mid - 5), (94, mid + 3), (100, mid), (w, mid)
+        ]
+        flat_pts = []
+        for x, y in points:
+            flat_pts.extend([x, y])
+        self.ekg_canvas.create_line(flat_pts, fill=ACCENT_BLUE, width=1.5, smooth=True)
+
+    def _draw_live_telemetry(self):
+        """Kart 2 için dalgalanan yumuşak telemetri eğrisi çizer."""
+        if not hasattr(self, "telemetry_canvas") or not self.telemetry_canvas.winfo_exists():
+            return
+        self.telemetry_canvas.delete("all")
+        w = 260
+        h = 50
+        import math
+        self._telemetry_phase = getattr(self, "_telemetry_phase", 0) + 0.15
+        
+        pts = []
+        for i in range(0, int(w) + 1, 10):
+            norm = i / w
+            y = (h / 2) + math.sin(norm * 4 * math.pi + self._telemetry_phase) * 12 + math.sin(norm * 8 * math.pi - self._telemetry_phase) * 6
+            # Orta kısımda hafif peak
+            if 0.4 < norm < 0.6:
+                y -= 8
+            pts.extend([i, max(4, min(h - 4, y))])
+        
+        if len(pts) >= 4:
+            self.telemetry_canvas.create_line(pts, fill=ACCENT_BLUE, width=1.8, smooth=True)
+        self.root.after(300, self._draw_live_telemetry)
+
+    def _render_task_rows(self):
+        """Görev akışı kartındaki satırları temiz ve ferah render eder."""
+        for child in self.tasks_list_frame.winfo_children():
+            child.destroy()
+        
+        for name, time_str, dot_color in self._task_rows[:5]:
+            row = tk.Frame(self.tasks_list_frame, bg=BG_CARD)
+            row.pack(fill="x", pady=2)
+
+            left_box = tk.Frame(row, bg=BG_CARD)
+            left_box.pack(side="left")
+            tk.Label(left_box, text="●", font=("Consolas", 7), fg=dot_color, bg=BG_CARD).pack(side="left", padx=(0, 8))
+            tk.Label(left_box, text=name, font=("Consolas", 9), fg=TEXT_MAIN, bg=BG_CARD).pack(side="left")
+
+            tk.Label(row, text=time_str, font=("Consolas", 8), fg=TEXT_DIM, bg=BG_CARD).pack(side="right")
 
     def _poll_vitals(self):
         try:
             import psutil
             cpu = psutil.cpu_percent()
             ram = psutil.virtual_memory().percent
-            self.cpu_lbl.configure(text=f"CPU: %{cpu}")
-            self.ram_lbl.configure(text=f"RAM: %{ram}")
+            if hasattr(self, "cpu_lbl"):
+                self.cpu_lbl.configure(text=f"{cpu}%")
+            if hasattr(self, "cpu_bar"):
+                self.cpu_bar.set(cpu / 100.0)
+            if hasattr(self, "ram_lbl"):
+                self.ram_lbl.configure(text=f"{ram}%")
+            if hasattr(self, "ram_bar"):
+                self.ram_bar.set(ram / 100.0)
         except Exception:
             pass
         self.root.after(2000, self._poll_vitals)
+
+    def add_task_to_feed(self, title: str):
+        """Görev akışı kartına dinamik olarak yeni bir görev ekler."""
+        if not hasattr(self, "_task_rows"):
+            return
+        now_str = datetime.now().strftime("%H:%M:%S")
+        self._task_rows.insert(0, (title, now_str, ACCENT_BLUE))
+        self._render_task_rows()
 
     def display_card(self, title: str, content: str, image_path: str = None):
         """Card with text + optional image. Thread-safe."""
@@ -1379,64 +1578,61 @@ class JarvisInterface:
         canvas = self.canvas
         canvas.delete("all")
 
-        cx, cy = 145, 122
-        r_out = 96
-        r_mid = 80
-        r_in  = 62
+        cx, cy = 145, 105
+        r_orbit = 82
 
-        canvas.create_oval(cx - r_out, cy - r_out, cx + r_out, cy + r_out,
-                          outline="#0A1830", width=1, fill=BG_PANEL)
-        canvas.create_oval(cx - r_out - 6, cy - r_out - 6,
-                           cx + r_out + 6, cy + r_out + 6,
-                           outline=ACCENT_DIM, width=1)
+        # Dış İnce Yörünge Halkası
+        canvas.create_oval(cx - r_orbit, cy - r_orbit, cx + r_orbit, cy + r_orbit,
+                          outline=ACCENT_DIM, width=1)
 
-        start = self._anim_angle % 360
-        extent = 220 + 40 * math.sin(math.radians(self._anim_pulse))
+        # Yörünge üzerinde hareket eden zarif yay (accent arc)
+        start_angle = self._anim_angle % 360
+        canvas.create_arc(
+            cx - r_orbit, cy - r_orbit, cx + r_orbit, cy + r_orbit,
+            start=start_angle, extent=80,
+            style="arc", outline=ACCENT_BLUE, width=1.5
+        )
 
-        for offset, width, color in [(0, 7, "#00304A"), (0, 4, ACCENT_RING), (0, 2, ACCENT_BLUE)]:
-            canvas.create_arc(
-                cx - r_out + offset, cy - r_out + offset,
-                cx + r_out - offset, cy + r_out - offset,
-                start=start, extent=extent,
-                style="arc", outline=color, width=width
-            )
+        # Karşıt küçük yay
+        canvas.create_arc(
+            cx - r_orbit, cy - r_orbit, cx + r_orbit, cy + r_orbit,
+            start=(start_angle + 180) % 360, extent=40,
+            style="arc", outline=ACCENT_RING, width=1.2
+        )
 
-        canvas.create_arc(cx - r_mid, cy - r_mid, cx + r_mid, cy + r_mid,
-                          start=(start + 150) % 360, extent=70,
-                          style="arc", outline=ACCENT_DIM, width=2)
-        canvas.create_oval(cx - r_in, cy - r_in, cx + r_in, cy + r_in,
-                          outline="#0A2040", width=1)
+        # Nefes alan iç çekirdek küresi (Luminous Core)
+        pulse = math.sin(math.radians(self._anim_pulse))
+        r_core = 52 + int(3 * pulse)
 
-        for i in range(24):
-            angle_r = math.radians(i * 15)
-            length = 8 if i % 6 == 0 else (5 if i % 3 == 0 else 3)
-            col = ACCENT_BLUE if i % 6 == 0 else ACCENT_DIM
-            x1 = cx + (r_out - 1) * math.cos(angle_r)
-            y1 = cy - (r_out - 1) * math.sin(angle_r)
-            x2 = cx + (r_out + length) * math.cos(angle_r)
-            y2 = cy - (r_out + length) * math.sin(angle_r)
-            canvas.create_line(x1, y1, x2, y2, fill=col, width=1)
+        # Dış yumuşak aura çemberi
+        canvas.create_oval(cx - r_core - 6, cy - r_core - 6, cx + r_core + 6, cy + r_core + 6,
+                          outline="#102338", width=1)
 
-        canvas.create_text(cx, cy - 14, text="J·A·R·V·I·S",
-                          fill=ACCENT_BLUE, font=("Consolas", 13, "bold"))
+        # Ana küre gövdesi
+        canvas.create_oval(cx - r_core, cy - r_core, cx + r_core, cy + r_core,
+                          fill="#0D121D", outline=ACCENT_RING, width=1.2)
+
+        # Merkez Tipografi
+        canvas.create_text(cx, cy - 8, text="JARVIS",
+                          fill="#F1F5F9", font=("Consolas", 12, "bold"))
 
         status_short, status_color = self._get_status_info()
-        canvas.create_text(cx, cy + 8, text=status_short,
-                          fill=status_color, font=("Consolas", 9))
+        canvas.create_text(cx, cy + 10, text=status_short,
+                          fill=status_color, font=("Consolas", 8, "bold"))
 
-        glow = 0.5 + 0.5 * math.sin(math.radians(self._anim_glow))
-        led_color = self._lerp_color(ACCENT_DIM, ACCENT_BLUE, glow)
-        for ax, ay in [(cx - r_out - 12, cy), (cx + r_out + 12, cy),
-                       (cx, cy - r_out - 12), (cx, cy + r_out + 12)]:
-            canvas.create_oval(ax - 3, ay - 3, ax + 3, ay + 3,
-                              fill=led_color, outline="")
+        # Yörüngede dönen minimal parlak nokta (Satellite Dot)
+        sat_angle = math.radians(self._anim_angle)
+        sx = cx + r_orbit * math.cos(sat_angle)
+        sy = cy - r_orbit * math.sin(sat_angle)
+        canvas.create_oval(sx - 2.5, sy - 2.5, sx + 2.5, sy + 2.5,
+                          fill=ACCENT_BLUE, outline="")
 
-        speed = 3.0 if "LISTENING" in self._status else 1.2
+        speed = 2.5 if "LISTENING" in self._status else 1.0
         self._anim_angle += speed
         self._anim_pulse += 3 * self._anim_dir
         if self._anim_pulse > 90 or self._anim_pulse < 0:
             self._anim_dir *= -1
-        self._anim_glow += 2.5
+        self._anim_glow += 2.0
 
         self.root.after(35, self._animate)
 

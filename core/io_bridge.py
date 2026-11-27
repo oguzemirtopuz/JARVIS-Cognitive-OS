@@ -193,7 +193,7 @@ class IOBridge:
         try:
             client = AsyncGroq(api_key=api_key)
             models = getattr(self.config, "brain_models", None) if self.config else None
-            model = (models or ["qwen/qwen3.6-27b"])[0]
+            model = (models or ["qwen/qwen3.8-27b"])[0]
             response = await client.chat.completions.create(
                 model=model,
                 messages=[

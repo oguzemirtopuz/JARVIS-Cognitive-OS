@@ -202,8 +202,9 @@ class Reflector:
             )
 
             # brain.think() is now async
+            model_to_use = getattr(self.brain, "model_id", "qwen/qwen3.8-27b") if self.brain else "qwen/qwen3.8-27b"
             llm_response_obj = await self.brain.client.chat.completions.create(
-                model="qwen/qwen3.6-27b",
+                model=model_to_use,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.0,
                 max_tokens=1024,
