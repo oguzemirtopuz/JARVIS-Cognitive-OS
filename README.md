@@ -138,13 +138,14 @@ When JARVIS encounters a tool requirement outside its registry:
 
 ---
 
-## ✨ Latest: v16.7.0 — Cognitive OS Systemic Hardening & Logical Bug Fixes
+## ✨ Latest: v17.0.0 — Next-Gen Obsidian UI & Self-Healing Runtime
  
  > [!IMPORTANT]
- > **Key changes in v16.7.0:**
- > - **Cognitive OS Hardening:** Fixed 14 systemic logical bugs including parameter parsing edge-cases, audio concurrency race conditions, and EventBus wildcard double-dispatch.
- > - **Deterministic Telemetry & Memory Safety:** Guaranteed exception-resilient cognition loop telemetry and bounded cache eviction policies.
- > - **Exception Clean-Up:** Full removal of bare `except:` statements across all core subsystems for reliable system lifecycle management.
+ > **Key changes in v17.0.0:**
+ > - **Next-Gen Ultra-Clean Obsidian UI:** Total redesign of the HUD with an industrial aerospace aesthetic, breathing Luminous Core, streamlined telemetry, and real-time Task Stream cards.
+ > - **Self-Healing Dependency Guard:** Automated startup pre-flight validation that autonomously repairs missing packages in the background, eliminating `ModuleNotFoundError` permanently.
+ > - **Groq Model Resolution:** Fixed 404 connection aborts by migrating to the official `qwen/qwen3.8-27b` neural model.
+ > - **Isolated Runtime Environment:** Native `.venv` integration preventing cross-project dependency pollution.
 
 *(Full version history in [CHANGELOG.md](CHANGELOG.md))*
 

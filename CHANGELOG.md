@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v17.0.0] - 2026-11-27
+### Added
+- **[Core/Runtime] Self-Healing Dependency Guard (`core/dependency_guard.py`):** Pre-flight health checker that detects broken or missing packages on startup and automatically repairs them via silent background installation, preventing runtime crashes.
+- **[Environment] Isolated Virtual Environment Priority (`.venv`):** Native routing in launchers (`startup_jarvis.bat`, `launch_jarvis.pyw`) ensuring execution always runs within the dedicated virtual environment to prevent global package conflicts.
+- **[GUI/HUD] Next-Gen Ultra-Clean Obsidian Interface:** Complete aesthetic modernization featuring deep obsidian surfaces (`#060709`), brushed graphite panels, a breathing neural core (Luminous Core), and sleek telemetry progress bars.
+- **[GUI/MissionControl] Integrated Flight-Deck Cards:** Introduced 3 real-time data cards:
+  - *Proactive Intelligence Status:* Dynamic ECG pulse wave with real-time subsystem state tracking.
+  - *Live Telemetry:* Smooth sinusoidal activity curve visualizing system latency and data throughput.
+  - *Task Stream:* Time-stamped, spacious chronological event stream for background autonomous tasks.
+- **[GUI/Controls] Segmented Entry Pill:** Clean, modern toggle between Voice and Written interaction modes.
+
+### Fixed
+- **[Core/Brain] Groq Model 404 Resolution:** Corrected model identifiers in `core/config.py`, `core/io_bridge.py`, and `core/reflector.py` from `qwen/qwen3.6-27b` to the officially supported `qwen/qwen3.8-27b`, resolving API connection errors.
+- **[Dependencies] PyYAML Specification:** Explicitly anchored `PyYAML>=6.0.2` in `requirements.txt` to eliminate implicit ChromaDB dependency failures.
+- **[Tests/Compatibility] File Tool & App Index Tests:** Added backward-compatibility aliases in `tools/file_tool.py` and resolved static path resolution in `tests/test_app_index.py`.
+
+---
+
 ## [v16.9.0] - 2026-08-20
 ### Fixed
 - **[GUI/Shutdown] Coordinated engine teardown (`#25`, `#28`):** Window close no longer calls `os._exit()` before Playwright, ChromaDB, and async tasks finish. Shutdown is signaled through the IO bridge, `engine.shutdown()` is idempotent, stdout is restored before cleanup, and `os._exit` remains only as a last-resort hang watchdog.
